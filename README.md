@@ -24,7 +24,8 @@ GhostFi gives you a banking interface where your balance is **private by default
 
 | Feature | Description |
 |---|---|
-| 🔒 Private Balance | Shield USDC/USDT into an encrypted on-chain balance only you can see |
+| 🔒 Private Balance | Shield USDC/USDT/PUSD into an encrypted on-chain balance only you can see |
+| 🌴 PUSD Swap | Swap USDC/USDT → Palm USD (non-freezable stablecoin) via Jupiter v6 |
 | 📤 Private Send | Send tokens via the GhostFi mixer — no on-chain link between sender and recipient |
 | 📥 Receive | Scan for incoming UTXOs and claim them into your private balance |
 | 📋 Compliance | Export your viewing key for selective disclosure to auditors or accountants |
@@ -51,6 +52,22 @@ GhostFi gives you a banking interface where your balance is **private by default
 - **@umbra-privacy/sdk** + **@umbra-privacy/web-zk-prover**
 - **@solana/wallet-adapter-react** (Phantom, Solflare)
 - **Zustand** for state
+- **RPC Fast** — low-latency Solana RPC infrastructure (Frankfurt)
+- **Jupiter v6** — PUSD swap routing
+
+---
+
+## Infrastructure
+
+GhostFi runs on [RPC Fast](https://rpcfast.com) for all Solana RPC and WebSocket connections. RPC Fast provides the low-latency, high-throughput infrastructure required for ZK proof generation and UTXO scanning to feel snappy in the browser.
+
+| Concern | Provider |
+|---|---|
+| Solana RPC | RPC Fast (Frankfurt) |
+| WebSocket subscriptions | RPC Fast |
+| ZK proving | Browser-side (Umbra web-zk-prover) |
+| UTXO indexing | Umbra Indexer API |
+| Swap routing | Jupiter v6 API |
 
 ---
 
@@ -72,8 +89,9 @@ pnpm install
 Edit `.env.local`:
 
 ```env
-NEXT_PUBLIC_RPC_URL=https://api.mainnet-beta.solana.com
-NEXT_PUBLIC_RPC_WS_URL=wss://api.mainnet-beta.solana.com
+# RPC Fast (recommended — low-latency Frankfurt endpoint)
+NEXT_PUBLIC_RPC_URL=https://<your-endpoint>.rpcfast.com
+NEXT_PUBLIC_RPC_WS_URL=wss://<your-endpoint>.rpcfast.com
 NEXT_PUBLIC_NETWORK=mainnet
 ```
 
