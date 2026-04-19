@@ -28,9 +28,11 @@ export async function getClient(
   // serialization issues that cause signature verification failures.
   const walletMatch = findWalletAccount(address);
   console.log("[getClient] walletMatch:", walletMatch ? `found: ${walletMatch.account.address}` : "null — using fallback signer");
-  const signer = walletMatch
-    ? createSignerFromWalletAccount(walletMatch.wallet, walletMatch.account)
-    : buildFallbackSigner(address, signTransaction, signMessage);
+  // createSignerFromWalletAccount passes @solana/kit transactions directly to the
+  // wallet's solana:signTransaction feature, which some wallets (Phantom/Solflare
+  // via the adapter) reject with "An internal error has occurred".
+  // Force the fallback signer which bridges through @solana/web3.js VersionedTransaction.
+  const signer = buildFallbackSigner(address, signTransaction, signMessage);
 
   _client = await getUmbraClient({
     signer: signer as any,
