@@ -27,6 +27,7 @@ export async function getClient(
   // handles the @solana/kit transaction format natively, avoiding cross-SDK
   // serialization issues that cause signature verification failures.
   const walletMatch = findWalletAccount(address);
+  console.log("[getClient] walletMatch:", walletMatch ? `found: ${walletMatch.account.address}` : "null — using fallback signer");
   const signer = walletMatch
     ? createSignerFromWalletAccount(walletMatch.wallet, walletMatch.account)
     : buildFallbackSigner(address, signTransaction, signMessage);
