@@ -1,6 +1,6 @@
 import { getUmbraClient, createSignerFromWalletAccount } from "@umbra-privacy/sdk";
 import { getWallets } from "@wallet-standard/app";
-import { VersionedTransaction } from "@solana/web3.js";
+import { VersionedTransaction, VersionedMessage } from "@solana/web3.js";
 
 let _client: Awaited<ReturnType<typeof getUmbraClient>> | null = null;
 let _signerAddress: string | null = null;
@@ -54,9 +54,8 @@ function buildFallbackSigner(
   return {
     address: address as any,
     async signTransaction(transaction: any) {
-      // DEBUG — remove after fixing
       console.log("[signTx] keys:", Object.keys(transaction));
-      console.log("[signTx] full object:", JSON.stringify(
+      console.log("[signTx] full:", JSON.stringify(
         transaction,
         (_, v) => v instanceof Uint8Array ? `Uint8Array(${v.length})` :
                   typeof v === "bigint" ? v.toString() : v,
@@ -66,8 +65,8 @@ function buildFallbackSigner(
       const messageBytes: Uint8Array =
         transaction.messageBytes ??
         transaction.message?.serialize() ??
-        (() => { throw new Error("Cannot extract message bytes from transaction"); })();
-      const { VersionedMessage } = await import("@solana/web3.js");
+        (() => { throw new Error("Cannot extract message bytes"); })();
+
       const vTx = new VersionedTransaction(VersionedMessage.deserialize(messageBytes));
       const signed = await signTransaction(vTx);
       const sig = signed.signatures[0];
