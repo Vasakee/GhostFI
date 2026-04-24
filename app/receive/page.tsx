@@ -1,6 +1,7 @@
 "use client";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useState } from "react";
+import { Download, Copy, Check, Radar } from "lucide-react";
 import { getClient, SUPPORTED_TOKENS } from "@/lib/umbra";
 import { scanUtxos, claimUtxos } from "@/lib/actions";
 import { useBankStore } from "@/lib/store";
@@ -13,7 +14,10 @@ export default function ReceivePage() {
   const { pendingUtxos, setPendingUtxos, addTx } = useBankStore();
   const [scanning, setScanning] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const address = publicKey?.toBase58() ?? "";
 
   async function getClient_() {
     if (!publicKey || !signTransaction || !signMessage) throw new Error("Wallet not connected");
@@ -45,53 +49,119 @@ export default function ReceivePage() {
     setClaiming(false);
   }
 
+  function copyAddress() {
+    navigator.clipboard.writeText(address);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   return (
     <>
       <Navbar />
       {errorMsg && <ErrorModal error={errorMsg} onClose={() => setErrorMsg("")} />}
-      <main className="max-w-lg mx-auto px-4 py-10 space-y-6">
-        <h1 className="text-2xl font-bold">Receive</h1>
+      <main className="max-w-lg mx-auto px-4 py-8 space-y-5">
 
-        <div className="bg-gray-900 rounded-xl p-5 space-y-2">
-          <p className="text-xs text-gray-400">Your Solana Address</p>
-          <p className="font-mono text-sm break-all text-gray-200">{publicKey?.toBase58() ?? "—"}</p>
-          <p className="text-xs text-gray-500">Share this address to receive private transfers via the GhostFi mixer.</p>
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Download size={20} className="text-purple-400" /> Receive
+          </h1>
+          <p className="text-gray-500 text-sm">Scan for incoming private transfers and claim them.</p>
         </div>
 
-        <div className="bg-gray-900 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <p className="font-semibold text-sm">Pending UTXOs</p>
-            <span className="bg-brand text-white text-xs px-2 py-0.5 rounded-full">{pendingUtxos.length}</span>
+        {/* Address card */}
+        <div className="glass rounded-2xl p-5 space-y-3">
+          <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Your Receive Address</p>
+          <div className="bg-white/3 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
+            <p className="font-mono text-xs text-gray-300 break-all leading-relaxed">
+              {address || "Connect wallet"}
+            </p>
+            {address && (
+              <button
+                onClick={copyAddress}
+                className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"
+              >
+                {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} className="text-gray-400" />}
+              </button>
+            )}
           </div>
+          <p className="text-xs text-gray-600">Share this address to receive private transfers via the GhostFi mixer.</p>
+        </div>
+
+        {/* Scan card */}
+        <div className="glass rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-sm">Pending UTXOs</p>
+              <p className="text-xs text-gray-500 mt-0.5">Unclaimed incoming transfers</p>
+            </div>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+              pendingUtxos.length > 0
+                ? "bg-purple-500/20 text-purple-300"
+                : "bg-white/5 text-gray-500"
+            }`}>
+              {pendingUtxos.length}
+            </span>
+          </div>
+
           <button
             onClick={handleScan}
             disabled={scanning || !publicKey}
-            className="w-full bg-gray-700 hover:bg-gray-600 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/8 border border-white/8 hover:border-purple-500/30 py-3 rounded-xl text-sm font-semibold disabled:opacity-40 transition-all"
           >
-            {scanning ? "Scanning..." : "Scan for Incoming Transfers"}
+            {scanning ? (
+              <>
+                <div className="w-4 h-4 border-2 border-purple-400/30 border-t-purple-400 rounded-full animate-spin" />
+                Scanning…
+              </>
+            ) : (
+              <>
+                <Radar size={15} className="text-purple-400" />
+                Scan for Incoming Transfers
+              </>
+            )}
           </button>
 
           {pendingUtxos.length > 0 && (
-            <>
+            <div className="space-y-3">
               <div className="space-y-2">
                 {pendingUtxos.map((u, i) => {
                   const token = SUPPORTED_TOKENS.find((t) => t.mint === u.mint) ?? SUPPORTED_TOKENS[0];
                   return (
-                    <div key={i} className="flex justify-between text-sm bg-gray-800 rounded-lg px-3 py-2">
-                      <span className="text-gray-300">UTXO #{i + 1}</span>
-                      <span>{(Number(u.amount ?? 0) / 10 ** token.decimals).toFixed(2)} {token.symbol}</span>
+                    <div key={i} className="flex items-center justify-between bg-green-500/5 border border-green-500/15 rounded-xl px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-green-500/15 flex items-center justify-center">
+                          <Download size={12} className="text-green-400" />
+                        </div>
+                        <span className="text-sm text-gray-300">UTXO #{i + 1}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-green-400">
+                        +{(Number(u.amount ?? 0) / 10 ** token.decimals).toFixed(2)} {token.symbol}
+                      </span>
                     </div>
                   );
                 })}
               </div>
+
               <button
                 onClick={handleClaim}
                 disabled={claiming}
-                className="w-full bg-brand hover:bg-brand-dark py-2 rounded-lg text-sm font-semibold disabled:opacity-50"
+                className="w-full btn-primary py-3.5 rounded-xl font-semibold text-sm disabled:opacity-40 flex items-center justify-center gap-2"
               >
-                {claiming ? "Claiming..." : `Claim ${pendingUtxos.length} UTXO(s) into Private Balance`}
+                {claiming ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Claiming…
+                  </>
+                ) : (
+                  `Claim ${pendingUtxos.length} UTXO${pendingUtxos.length > 1 ? "s" : ""} into Private Balance`
+                )}
               </button>
-            </>
+            </div>
+          )}
+
+          {!scanning && pendingUtxos.length === 0 && publicKey && (
+            <p className="text-center text-xs text-gray-600 py-2">No pending transfers found. Scan to check for new ones.</p>
           )}
         </div>
       </main>
