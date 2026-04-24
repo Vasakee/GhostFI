@@ -35,12 +35,7 @@ export default function Home() {
         {/* ── Hero: stacked on mobile, two-col on large ── */}
         <section className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
 
-          {/* Left — ghost */}
-          <div className="flex-shrink-0 animate-fade-in-up-2">
-            <GhostAnimation />
-          </div>
-
-          {/* Right — text + CTA */}
+          {/* Left — text + CTA */}
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-5">
 
             <div className="animate-fade-in-up-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-purple-500/20 text-xs text-purple-300 font-medium">
@@ -80,6 +75,11 @@ export default function Home() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Right — ghost */}
+          <div className="flex-shrink-0 animate-fade-in-up-2">
+            <GhostAnimation />
           </div>
         </section>
 
