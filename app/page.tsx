@@ -32,11 +32,11 @@ export default function Home() {
     <main className="min-h-screen px-4 sm:px-8 pt-12 pb-20 relative overflow-hidden">
       <div className="max-w-6xl mx-auto flex flex-col gap-16 relative z-10">
 
-        {/* ── Hero: stacked on mobile, two-col on large ── */}
-        <section className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+        {/* ── Hero: stacked on mobile, two-col centered on large ── */}
+        <section className="flex flex-col lg:flex-row items-center justify-center gap-10 lg:gap-16">
 
           {/* Left — text + CTA */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-5">
+          <div className="flex flex-col items-center text-center gap-5">
 
             <div className="animate-fade-in-up-1 inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass border border-purple-500/20 text-xs text-purple-300 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
@@ -45,7 +45,7 @@ export default function Home() {
 
             <div className="animate-fade-in-up-2">
               <GhostLogo size={48} />
-              <div className="mt-3 h-px w-32 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent lg:ml-0 mx-auto" />
+              <div className="mt-3 h-px w-32 bg-gradient-to-r from-transparent via-purple-500/50 to-transparent mx-auto" />
             </div>
 
             <p className="animate-fade-in-up-3 text-gray-400 text-lg md:text-xl font-light leading-relaxed">
@@ -55,16 +55,16 @@ export default function Home() {
               Private banking on Solana.
             </p>
 
-            <div className="animate-fade-in-up-4 flex flex-col items-center lg:items-start gap-3">
+            <div className="animate-fade-in-up-4 flex flex-col items-center gap-3">
               <div className="pulse-glow rounded-xl">
                 <WalletMultiButton className="!btn-primary !rounded-xl !py-3.5 !px-10 !text-base !font-semibold" />
               </div>
               <p className="text-xs text-gray-600">No KYC. No data collection. Just privacy.</p>
             </div>
 
-            {/* Stats inline on large screens */}
+            {/* Stats */}
             <div
-              className="animate-fade-in-up glass rounded-2xl border border-white/5 overflow-hidden flex w-full max-w-sm lg:max-w-none"
+              className="animate-fade-in-up glass rounded-2xl border border-white/5 overflow-hidden flex w-full max-w-sm"
               style={{ animationDelay: "0.7s", animationFillMode: "both" }}
             >
               {STATS.map((s, i) => (
@@ -91,18 +91,16 @@ export default function Home() {
           >
             Everything private, by default
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {FEATURES.map((f, i) => (
               <div
                 key={f.title}
-                className="glass glass-hover rounded-2xl p-6 flex gap-4 items-start animate-fade-in-up"
+                className="glass glass-hover rounded-2xl p-4 flex flex-col gap-2 animate-fade-in-up"
                 style={{ animationDelay: `${0.9 + i * 0.1}s`, animationFillMode: "both" }}
               >
-                <div className="text-2xl mt-0.5 shrink-0">{f.icon}</div>
-                <div>
-                  <p className="text-sm font-semibold text-white mb-1">{f.title}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed">{f.desc}</p>
-                </div>
+                <div className="text-xl">{f.icon}</div>
+                <p className="text-xs font-semibold text-white">{f.title}</p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
