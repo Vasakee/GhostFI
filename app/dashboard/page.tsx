@@ -229,7 +229,7 @@ export default function Dashboard() {
 
       {errorMsg && <ErrorModal error={errorMsg} onClose={() => setErrorMsg("")} />}
 
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-5 pb-24 md:pb-8">
+      <main className="max-w-2xl mx-auto px-4 pt-4 md:pt-8 pb-24 md:pb-8 space-y-5">
 
         {/* Private Balance Card */}
         <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-purple-600/30 via-violet-600/20 to-transparent border border-purple-500/20">
