@@ -234,8 +234,43 @@ body::before {
   100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
 }
 
+/* ── Ghost logo animation ── */
+@keyframes ghost-float {
+  0%, 100% { transform: translateY(0px) rotate(-1deg); }
+  50%       { transform: translateY(-14px) rotate(1deg); }
+}
+@keyframes ghost-glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 18px #6C47FFaa) drop-shadow(0 0 40px #6C47FF44); }
+  50%       { filter: drop-shadow(0 0 32px #a78bfacc) drop-shadow(0 0 70px #6C47FF66); }
+}
+@keyframes ghost-eye-blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95%           { transform: scaleY(0.1); }
+}
+@keyframes particle-orbit {
+  from { transform: rotate(var(--start)) translateX(var(--r)) rotate(calc(-1 * var(--start))); }
+  to   { transform: rotate(calc(var(--start) + 360deg)) translateX(var(--r)) rotate(calc(-1 * (var(--start) + 360deg))); }
+}
+@keyframes particle-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.3); }
+}
+@keyframes ring-spin-1 {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes ring-spin-2 {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+.ghost-float    { animation: ghost-float 3.5s ease-in-out infinite, ghost-glow-pulse 3.5s ease-in-out infinite; }
+.ghost-eye      { animation: ghost-eye-blink 5s ease-in-out infinite; transform-origin: center; }
+.ring-1         { animation: ring-spin-1 12s linear infinite; }
+.ring-2         { animation: ring-spin-2 18s linear infinite; }
+.ring-3         { animation: ring-spin-1 25s linear infinite; }
+
+
 /* ── Wallet adapter override ── */
 .wallet-adapter-button {
   font-family: 'Inter', sans-serif !important;
 }
-
