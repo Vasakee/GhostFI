@@ -2,7 +2,7 @@
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { GhostAnimation } from "@/components/GhostAnimation";
 import { GhostLogo } from "@/components/GhostLogo";
@@ -23,7 +23,9 @@ const STATS = [
 export default function Home() {
   const { connected } = useWallet();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     if (connected) router.push("/dashboard");
   }, [connected, router]);
@@ -57,7 +59,7 @@ export default function Home() {
 
             <div className="animate-fade-in-up-4 flex flex-col items-center gap-3">
               <div className="pulse-glow rounded-xl">
-                <WalletMultiButton className="!btn-primary !rounded-xl !py-3.5 !px-10 !text-base !font-semibold" />
+                {mounted && <WalletMultiButton className="!btn-primary !rounded-xl !py-3.5 !px-10 !text-base !font-semibold" />}
               </div>
               <p className="text-xs text-gray-600">No KYC. No data collection. Just privacy.</p>
             </div>

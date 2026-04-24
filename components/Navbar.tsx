@@ -6,6 +6,7 @@ import { useBankStore } from "@/lib/store";
 import { GhostLogo } from "@/components/GhostLogo";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import { useEffect, useState } from "react";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -19,6 +20,8 @@ const NAV = [
 export function Navbar() {
   const path = usePathname();
   const { cardBalance, cardStatus } = useBankStore();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   return (
     <>
@@ -55,7 +58,7 @@ export function Navbar() {
           </div>
 
           {/* Wallet button */}
-          <WalletMultiButton className="!bg-gradient-to-r !from-purple-600 !to-violet-600 !rounded-lg !text-xs md:!text-sm !py-2 !px-3 md:!px-4 !font-medium hover:!shadow-lg hover:!shadow-purple-500/25 !transition-all" />
+          {mounted && <WalletMultiButton className="!bg-gradient-to-r !from-purple-600 !to-violet-600 !rounded-lg !text-xs md:!text-sm !py-2 !px-3 md:!px-4 !font-medium hover:!shadow-lg hover:!shadow-purple-500/25 !transition-all" />}
         </div>
         <div className="h-px bg-gradient-to-r from-transparent via-purple-500/20 to-transparent" />
       </nav>
