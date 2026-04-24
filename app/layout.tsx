@@ -5,6 +5,7 @@ import { WalletProviderWrapper } from "@/components/WalletProvider";
 export const metadata: Metadata = {
   title: "GhostFi — Private Banking on Solana",
   description: "Your balance. Invisible. Private banking on Solana.",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

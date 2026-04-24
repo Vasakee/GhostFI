@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CreditCard, LayoutDashboard, Send, Download, ScrollText, ShieldCheck } from "lucide-react";
 import { useBankStore } from "@/lib/store";
+import { GhostLogo } from "@/components/GhostLogo";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
@@ -26,14 +27,8 @@ export function Navbar() {
         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 md:px-6 py-3.5">
 
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center gap-2 group">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-violet-700 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow">
-              <span className="text-white text-xs font-black">G</span>
-            </div>
-            <span className="text-base font-bold">
-              <span className="gradient-text">Ghost</span>
-              <span className="text-white">Fi</span>
-            </span>
+          <Link href="/dashboard" className="flex items-center">
+            <GhostLogo size={28} />
           </Link>
 
           {/* Desktop nav links */}

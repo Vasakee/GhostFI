@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { GhostAnimation } from "@/components/GhostAnimation";
+import { GhostLogo } from "@/components/GhostLogo";
 
 const FEATURES = [
   { icon: "🔒", title: "Private Balances", desc: "Encrypted on-chain via Arcium MPC. Only you can see your balance." },
@@ -45,13 +46,10 @@ export default function Home() {
         </div>
 
         {/* Wordmark */}
-        <div className="animate-fade-in-up-2 -mt-2">
-          <h1 className="text-6xl md:text-7xl font-black tracking-tight leading-none">
-            <span className="gradient-text">Ghost</span>
-            <span className="text-white">Fi</span>
-          </h1>
-          <div className="mt-3 h-px w-32 mx-auto bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
+        <div className="animate-fade-in-up-2 -mt-2 flex justify-center">
+          <GhostLogo size={40} />
         </div>
+        <div className="h-px w-32 mx-auto bg-gradient-to-r from-transparent via-purple-500/50 to-transparent" />
 
         {/* Tagline */}
         <p className="animate-fade-in-up-3 mt-5 text-gray-400 text-lg md:text-xl font-light leading-relaxed">
