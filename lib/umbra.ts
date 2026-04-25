@@ -107,11 +107,8 @@ export const USDT_MINT = isDevnet
   : "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 
 // Palm USD — non-freezable, non-blacklistable USD stablecoin on Solana
-// Ethereum contract (for reference): 0xfaf0cee6b20e2aaa4b80748a6af4cd89609a3d78
-// TODO: Replace with the official Solana SPL mint — contact hello@palmusd.com or check their docs
-export const PUSD_MINT = isDevnet
-  ? "TODO_PUSD_DEVNET_MINT"
-  : "TODO_PUSD_MAINNET_MINT";
+// Solana mainnet SPL mint: https://solscan.io/account/CZzgUBvxaMLwMhVSLgqJn3npmxoTo6nzMNQPAnwtHF3s
+export const PUSD_MINT = "CZzgUBvxaMLwMhVSLgqJn3npmxoTo6nzMNQPAnwtHF3s";
 
 export const SUPPORTED_TOKENS = [
   { symbol: "USDC", mint: USDC_MINT, decimals: 6 },
