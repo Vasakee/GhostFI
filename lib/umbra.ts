@@ -1,6 +1,7 @@
 import { getUmbraClient, createSignerFromWalletAccount } from "@umbra-privacy/sdk";
 import { getWallets } from "@wallet-standard/app";
-import { VersionedTransaction, VersionedMessage } from "@solana/web3.js";
+import { VersionedTransaction } from "@solana/web3.js";
+import { getTransactionEncoder, getTransactionDecoder } from "@solana/transactions";
 
 let _client: Awaited<ReturnType<typeof getUmbraClient>> | null = null;
 let _signerAddress: string | null = null;
@@ -53,29 +54,20 @@ function buildFallbackSigner(
   signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>,
   signMessage: (msg: Uint8Array) => Promise<Uint8Array>
 ) {
+  const encoder = getTransactionEncoder();
+  const decoder = getTransactionDecoder();
+
   return {
     address: address as any,
     async signTransaction(transaction: any) {
-      console.log("[signTx] keys:", Object.keys(transaction));
-      console.log("[signTx] full:", JSON.stringify(
-        transaction,
-        (_, v) => v instanceof Uint8Array ? `Uint8Array(${v.length})` :
-                  typeof v === "bigint" ? v.toString() : v,
-        2
-      ));
-
-      const messageBytes: Uint8Array =
-        transaction.messageBytes ??
-        transaction.message?.serialize() ??
-        (() => { throw new Error("Cannot extract message bytes"); })();
-
-      const vTx = new VersionedTransaction(VersionedMessage.deserialize(messageBytes));
+      // Encode the kit transaction to wire bytes, sign via web3.js adapter,
+      // then decode back and spread the resulting signatures — same pattern
+      // the SDK uses internally in createSignerFromWalletAccount.
+      const wireBytes = encoder.encode(transaction);
+      const vTx = VersionedTransaction.deserialize(wireBytes as Uint8Array);
       const signed = await signTransaction(vTx);
-      const sig = signed.signatures[0];
-      console.log("[signTx] sig[0]:", sig ? Buffer.from(sig).toString("hex").slice(0, 32) + "..." : "null/empty");
-      console.log("[signTx] sig all zeros:", sig?.every((b: number) => b === 0));
-      if (!sig || sig.every((b: number) => b === 0)) throw new Error("Wallet returned empty signature");
-      return { ...transaction, signatures: { ...transaction.signatures, [address]: new Uint8Array(sig) } };
+      const decoded = decoder.decode(signed.serialize() as Uint8Array);
+      return { ...transaction, signatures: { ...transaction.signatures, ...decoded.signatures } };
     },
     async signTransactions(transactions: any[]) {
       return Promise.all(transactions.map((tx: any) => this.signTransaction(tx)));
