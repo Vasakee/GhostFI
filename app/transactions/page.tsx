@@ -48,7 +48,7 @@ const CATEGORY_ICONS: Record<string, JSX.Element> = {
 
 function fmt(n: number) { return n.toFixed(2); }
 function fmtBig(n: bigint, decimals = 6) { return (Number(n) / 10 ** decimals).toFixed(2); }
-function fmtDate(ts: number) { return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
+function fmtDate(ts: number) { return new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); }
 
 const FILTERS = ["All", "Card", "Shield", "Send", "Receive"] as const;
 type Filter = typeof FILTERS[number];

@@ -1,12 +1,19 @@
 "use client";
 import { useMemo, useEffect } from "react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
-import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import { ConnectionProvider, WalletProvider, useWallet } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { useBankStore } from "@/lib/store";
+import { resetClient } from "@/lib/umbra";
+
+function WalletDisconnectWatcher() {
+  const { connected } = useWallet();
+  useEffect(() => { if (!connected) resetClient(); }, [connected]);
+  return null;
+}
 
 export function WalletProviderWrapper({ children }: { children: React.ReactNode }) {
   const network = (process.env.NEXT_PUBLIC_NETWORK === "devnet"
@@ -21,7 +28,10 @@ export function WalletProviderWrapper({ children }: { children: React.ReactNode 
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect={false}>
-        <WalletModalProvider>{children}</WalletModalProvider>
+        <WalletModalProvider>
+          <WalletDisconnectWatcher />
+          {children}
+        </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
   );
