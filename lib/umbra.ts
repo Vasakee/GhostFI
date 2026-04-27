@@ -1,7 +1,6 @@
 import { getUmbraClient, createSignerFromWalletAccount } from "@umbra-privacy/sdk";
 import { getWallets } from "@wallet-standard/app";
-import { VersionedTransaction } from "@solana/web3.js";
-import { getTransactionEncoder, getTransactionDecoder } from "@solana/transactions";
+import { VersionedTransaction, VersionedMessage } from "@solana/web3.js";
 
 let _client: Awaited<ReturnType<typeof getUmbraClient>> | null = null;
 let _signerAddress: string | null = null;
@@ -27,13 +26,12 @@ export async function getClient(
   // Prefer the Wallet Standard signer — the SDK's createSignerFromWalletAccount
   // handles the @solana/kit transaction format natively, avoiding cross-SDK
   // serialization issues that cause signature verification failures.
+  // Try the Wallet Standard signer first (SDK-native path).
+  // Fall back to the manual signer only if no Wallet Standard account is found.
   const walletMatch = findWalletAccount(address);
-  console.log("[getClient] walletMatch:", walletMatch ? `found: ${walletMatch.account.address}` : "null — using fallback signer");
-  // createSignerFromWalletAccount passes @solana/kit transactions directly to the
-  // wallet's solana:signTransaction feature, which some wallets (Phantom/Solflare
-  // via the adapter) reject with "An internal error has occurred".
-  // Force the fallback signer which bridges through @solana/web3.js VersionedTransaction.
-  const signer = buildFallbackSigner(address, signTransaction, signMessage);
+  const signer = walletMatch
+    ? createSignerFromWalletAccount(walletMatch.wallet, walletMatch.account)
+    : buildFallbackSigner(address, signTransaction, signMessage);
 
   _client = await getUmbraClient({
     signer: signer as any,
@@ -54,20 +52,19 @@ function buildFallbackSigner(
   signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>,
   signMessage: (msg: Uint8Array) => Promise<Uint8Array>
 ) {
-  const encoder = getTransactionEncoder();
-  const decoder = getTransactionDecoder();
-
   return {
     address: address as any,
     async signTransaction(transaction: any) {
-      // Encode the kit transaction to wire bytes, sign via web3.js adapter,
-      // then decode back and spread the resulting signatures — same pattern
-      // the SDK uses internally in createSignerFromWalletAccount.
-      const wireBytes = encoder.encode(transaction);
-      const vTx = VersionedTransaction.deserialize(wireBytes as Uint8Array);
+      // The kit transaction carries the raw serialized message in `messageBytes`.
+      // Build a web3.js VersionedTransaction from it (no signatures yet), have the
+      // wallet sign it, then put the resulting signature back into the kit tx under
+      // the signer's address key — which is what the kit signatures map expects.
+      const messageBytes: Uint8Array = transaction.messageBytes;
+      const vTx = new VersionedTransaction(VersionedMessage.deserialize(messageBytes));
       const signed = await signTransaction(vTx);
-      const decoded = decoder.decode(signed.serialize() as Uint8Array);
-      return { ...transaction, signatures: { ...transaction.signatures, ...decoded.signatures } };
+      const sig = signed.signatures[0];
+      if (!sig || sig.every((b: number) => b === 0)) throw new Error("Wallet returned empty signature");
+      return { ...transaction, signatures: { ...transaction.signatures, [address]: new Uint8Array(sig) } };
     },
     async signTransactions(transactions: any[]) {
       return Promise.all(transactions.map((tx: any) => this.signTransaction(tx)));
