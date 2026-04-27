@@ -30,10 +30,10 @@ importers:
         specifier: ^1.95.3
         version: 1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       '@umbra-privacy/sdk':
-        specifier: latest
+        specifier: 4.0.0
         version: 4.0.0(@wallet-standard/core@1.1.1)(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       '@umbra-privacy/web-zk-prover':
-        specifier: latest
+        specifier: 2.0.1
         version: 2.0.1(@umbra-privacy/sdk@4.0.0(@wallet-standard/core@1.1.1)(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(snarkjs@0.7.6)
       '@wallet-standard/app':
         specifier: ^1.1.0
