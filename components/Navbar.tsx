@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CreditCard, LayoutDashboard, Send, Download, ScrollText, ShieldCheck } from "lucide-react";
+import { CreditCard, LayoutDashboard, Send, Download, ScrollText, ShieldCheck, MessageCircle, Smartphone } from "lucide-react";
 import { useBankStore } from "@/lib/store";
 import { GhostLogo } from "@/components/GhostLogo";
 import "@solana/wallet-adapter-react-ui/styles.css";
@@ -15,6 +15,8 @@ const NAV = [
   { href: "/transactions", label: "Txns", icon: ScrollText },
   { href: "/compliance", label: "Comply", icon: ShieldCheck },
   { href: "/card", label: "Card", icon: CreditCard },
+  { href: "/whatsapp", label: "Bot", icon: MessageCircle },
+  { href: "/ussd", label: "USSD", icon: Smartphone },
 ];
 
 export function Navbar() {

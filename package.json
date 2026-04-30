@@ -18,11 +18,14 @@
     "@umbra-privacy/sdk": "4.0.0",
     "@umbra-privacy/web-zk-prover": "2.0.1",
     "@wallet-standard/app": "^1.1.0",
+    "africastalking": "0.6.2",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.8.0",
     "next": "14.2.5",
     "react": "^18",
     "react-dom": "^18",
+    "tweetnacl": "1.0.3",
+    "twilio": "5.7.1",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

@@ -12,6 +12,8 @@ const FEATURES = [
   { icon: "🕵️", title: "Anonymous Transfers", desc: "UTXO mixer with Groth16 ZK proofs. No link between sender and recipient." },
   { icon: "💳", title: "Virtual Card", desc: "Spend your private balance anywhere Visa is accepted." },
   { icon: "📋", title: "Compliance Keys", desc: "Selective disclosure to auditors — on your terms, not theirs." },
+  { icon: "📱", title: "USSD Banking", desc: "Dial *384*4977# from any phone — no internet or smartphone needed." },
+  { icon: "💬", title: "WhatsApp Bot", desc: "Send, shield, and check balance directly from WhatsApp." },
 ];
 
 const STATS = [
@@ -93,7 +95,7 @@ export default function Home() {
           >
             Everything private, by default
           </p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {FEATURES.map((f, i) => (
               <div
                 key={f.title}
