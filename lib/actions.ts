@@ -16,7 +16,12 @@ import {
   getClaimReceiverClaimableUtxoIntoEncryptedBalanceProver,
 } from "@umbra-privacy/web-zk-prover";
 
-const RELAYER = { apiEndpoint: "https://relayer.api.umbraprivacy.com" };
+const isDevnet = process.env.NEXT_PUBLIC_NETWORK === "devnet";
+const RELAYER_URL = isDevnet 
+  ? "https://relayer.api-devnet.umbraprivacy.com" 
+  : "https://relayer.api.umbraprivacy.com";
+
+const RELAYER = { apiEndpoint: RELAYER_URL };
 
 async function getProxiedAssetUrls(type: string, variant?: string) {
   const base = "/api/zk-assets";

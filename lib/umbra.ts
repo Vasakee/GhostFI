@@ -1,6 +1,6 @@
 import { getUmbraClient, createSignerFromWalletAccount } from "@umbra-privacy/sdk";
 import { getWallets } from "@wallet-standard/app";
-import { VersionedTransaction, VersionedMessage } from "@solana/web3.js";
+import { VersionedTransaction, VersionedMessage, PublicKey } from "@solana/web3.js";
 
 let _client: Awaited<ReturnType<typeof getUmbraClient>> | null = null;
 let _signerAddress: string | null = null;
@@ -33,11 +33,16 @@ export async function getClient(
     ? createSignerFromWalletAccount(walletMatch.wallet, walletMatch.account)
     : buildFallbackSigner(address, signTransaction, signMessage);
 
+  let rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? "https://solana.publicnode.com";
+  if (!rpcUrl || rpcUrl.includes("your-mainnet-rpc-endpoint")) {
+    rpcUrl = "https://solana.publicnode.com";
+  }
+
   _client = await getUmbraClient({
     signer: signer as any,
     network: (process.env.NEXT_PUBLIC_NETWORK as "mainnet" | "devnet") ?? "mainnet",
-    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL!,
-    rpcSubscriptionsUrl: process.env.NEXT_PUBLIC_RPC_WS_URL!,
+    rpcUrl,
+    rpcSubscriptionsUrl: process.env.NEXT_PUBLIC_RPC_WS_URL || rpcUrl.replace("https://", "wss://"),
     indexerApiEndpoint: "https://utxo-indexer.api.umbraprivacy.com",
     deferMasterSeedSignature: true,
   });
@@ -55,16 +60,33 @@ function buildFallbackSigner(
   return {
     address: address as any,
     async signTransaction(transaction: any) {
-      // The kit transaction carries the raw serialized message in `messageBytes`.
-      // Build a web3.js VersionedTransaction from it (no signatures yet), have the
-      // wallet sign it, then put the resulting signature back into the kit tx under
-      // the signer's address key — which is what the kit signatures map expects.
       const messageBytes: Uint8Array = transaction.messageBytes;
       const vTx = new VersionedTransaction(VersionedMessage.deserialize(messageBytes));
       const signed = await signTransaction(vTx);
-      const sig = signed.signatures[0];
-      if (!sig || sig.every((b: number) => b === 0)) throw new Error("Wallet returned empty signature");
-      return { ...transaction, signatures: { ...transaction.signatures, [address]: new Uint8Array(sig) } };
+
+      // Map signatures back by key
+      const newSignatures: Record<string, Uint8Array> = { ...(transaction.signatures ?? {}) };
+      
+      // Look up the index of the signer's public key in the transaction's static account keys
+      const signerPublicKey = new PublicKey(address);
+      const index = signed.message.staticAccountKeys.findIndex(k => k.equals(signerPublicKey));
+      
+      if (index === -1) {
+        console.error("[buildFallbackSigner] Signer not found in transaction keys", address);
+        throw new Error("Signer not found in transaction keys");
+      }
+
+      const sig = signed.signatures[index];
+      if (!sig || sig.every((b: number) => b === 0)) {
+        throw new Error("Wallet returned empty signature");
+      }
+
+      newSignatures[address] = new Uint8Array(sig);
+      
+      return { 
+        ...transaction, 
+        signatures: newSignatures
+      };
     },
     async signTransactions(transactions: any[]) {
       return Promise.all(transactions.map((tx: any) => this.signTransaction(tx)));

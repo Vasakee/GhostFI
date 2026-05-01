@@ -19,7 +19,12 @@ export function WalletProviderWrapper({ children }: { children: React.ReactNode 
   const network = (process.env.NEXT_PUBLIC_NETWORK === "devnet"
     ? WalletAdapterNetwork.Devnet
     : WalletAdapterNetwork.Mainnet) as WalletAdapterNetwork;
-  const endpoint = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+  
+  let endpoint = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+  if (endpoint.includes("your-mainnet-rpc-endpoint")) {
+    endpoint = "https://api.mainnet-beta.solana.com";
+  }
+
   const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter({ network })], [network]);
 
   const hydrate = useBankStore((s) => s.hydrate);

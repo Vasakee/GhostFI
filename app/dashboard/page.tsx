@@ -1,6 +1,7 @@
 "use client";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { ArrowDownLeft, ArrowUpRight, RefreshCw, Eye, EyeOff, TrendingUp, Wallet } from "lucide-react";
 import { getClient, SUPPORTED_TOKENS, PUSD_MINT } from "@/lib/umbra";
 import { registerAccount, shieldTokens, unshieldTokens, fetchEncryptedBalances } from "@/lib/actions";
@@ -44,24 +45,54 @@ export default function Dashboard() {
   }
 
   async function fetchPublicBalances(address: string) {
-    const rpc = process.env.NEXT_PUBLIC_RPC_URL!;
-    const [solRes, tokenRes, token2022Res] = await Promise.all([
-      fetch(rpc, { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [address] }) }).then((r) => r.json()),
-      fetch(rpc, { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 2, method: "getTokenAccountsByOwner",
-          params: [address, { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" }, { encoding: "jsonParsed" }] }) }).then((r) => r.json()),
-      fetch(rpc, { method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 3, method: "getTokenAccountsByOwner",
-          params: [address, { programId: "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb" }, { encoding: "jsonParsed" }] }) }).then((r) => r.json()),
-    ]);
-    if (solRes.result?.value != null) setSolBalance(solRes.result.value / 1e9);
-    const balances: Record<string, number> = {};
-    for (const { account } of [...(tokenRes.result?.value ?? []), ...(token2022Res.result?.value ?? [])]) {
-      const info = account.data.parsed.info;
-      balances[info.mint] = info.tokenAmount.uiAmount ?? 0;
+    const rpcList = [
+      process.env.NEXT_PUBLIC_RPC_URL,
+      "https://api.mainnet-beta.solana.com",
+      "https://solana.publicnode.com",
+      "https://solana-mainnet.g.allnodes.com",
+    ].filter(Boolean) as string[];
+
+    const pubkey = new PublicKey(address);
+    const tokenProgram = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+    const ataProgram = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+
+    for (const rpc of rpcList) {
+      if (!rpc || rpc.includes("your-mainnet-rpc-endpoint")) continue;
+      
+      try {
+        console.log(`[fetchPublicBalances] Attempting to fetch from: ${rpc}`);
+        const conn = new Connection(rpc, "confirmed");
+
+        // 1. Fetch SOL Balance
+        const sol = await conn.getBalance(pubkey);
+        setSolBalance(sol / 1e9);
+
+        // 2. Fetch Token Balances via ATA derivation (Much more reliable on public RPCs)
+        const balances: Record<string, number> = {};
+        
+        await Promise.all(SUPPORTED_TOKENS.map(async (token) => {
+          try {
+            const mint = new PublicKey(token.mint);
+            const [ata] = PublicKey.findProgramAddressSync(
+              [pubkey.toBuffer(), tokenProgram.toBuffer(), mint.toBuffer()],
+              ataProgram
+            );
+            
+            const balanceRes = await conn.getTokenAccountBalance(ata);
+            balances[token.mint] = balanceRes.value.uiAmount ?? 0;
+          } catch (e) {
+            // Account might not exist (0 balance)
+            balances[token.mint] = 0;
+          }
+        }));
+
+        setPublicTokenBalances(balances);
+        console.log(`[fetchPublicBalances] Successfully fetched all balances from ${rpc}`);
+        return; 
+      } catch (e: any) {
+        console.warn(`[fetchPublicBalances] Failed to connect to RPC ${rpc}:`, e.message);
+      }
     }
-    setPublicTokenBalances(balances);
   }
 
   useEffect(() => {

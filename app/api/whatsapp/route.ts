@@ -3,6 +3,7 @@ import twilio from "twilio";
 import { getOrCreateWallet, loadKeypair, checkRateLimit, isRegistered, setRegistered } from "@/lib/whatsapp-wallets";
 import { serverGetBalance, serverShield, serverUnshield, serverSend, serverRegister, serverExportViewingKey } from "@/lib/server-umbra";
 import { getCardDetails, getCardBalance } from "@/lib/rain";
+import { createFundingIntent } from "@/lib/funding";
 // #6 — use the network-aware mint from the shared constant
 import { USDC_MINT } from "@/lib/umbra";
 
@@ -53,15 +54,48 @@ async function handleCommand(phone: string, msg: string): Promise<string> {
 
 Commands:
 💰 balance — check your private balance
+💵 fund [amount] — fund your account via fiat
 📤 send [amount] [phone] — send USDC privately
 🔒 shield [amount] — move USDC to private balance
 🔓 unshield [amount] — move to public wallet
 💳 card — view your virtual card
+⛽ topup card [amount] — load card from private balance
 📋 history — last 5 transactions
 🔑 address — your wallet address
 ℹ️ help — show this menu
 
 ⚠️ GhostFi Bot uses a custodial server-side wallet tied to your phone number.`;
+  }
+
+  const cardTopupMatch = cmd.match(/^topup\s+card\s+([\d.]+)$/);
+  if (cardTopupMatch) {
+    const amount = parseFloat(cardTopupMatch[1]);
+    if (amount <= 0) return "❌ Invalid amount.";
+    const card = cardStore.get(phone);
+    if (!card) return "💳 No card linked. Visit https://ghostfi.app/card first.";
+    
+    try {
+      await ensureRegistered(phone);
+      const keypair = loadKeypair(phone);
+      // 1. Unshield from private balance to public wallet
+      await serverUnshield(keypair, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
+      // 2. Load onto card
+      await topUpCard(card.cardId, amount);
+      addTx(phone, "card_topup", amount);
+      return `⛽ Successfully loaded $${amount} USDC onto your GhostFi Card! ✓\nYour card balance is updated.`;
+    } catch (e: any) {
+      return `❌ Card top-up failed: ${e?.message ?? "insufficient private balance"}`;
+    }
+  }
+
+  const fundMatch = cmd.match(/^fund\s+([\d.]+)$/);
+  if (fundMatch) {
+    const amount = parseFloat(fundMatch[1]);
+    if (amount <= 0) return "❌ Invalid amount.";
+    const intentId = createFundingIntent(phone, amount);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const link = `${baseUrl}/checkout?intent=${intentId}`;
+    return `💵 Fund Account: ${amount} USDC\n\nPlease complete your payment at this link:\n${link}\n\nOnce finished, your balance will be updated automatically.`;
   }
 
   if (cmd === "balance") {

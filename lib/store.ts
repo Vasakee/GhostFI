@@ -38,20 +38,27 @@ export const useBankStore = create<BankStore>((set) => ({
 
   hydrate: () => {
     if (typeof window === "undefined") return;
-    set({
-      registered: localStorage.getItem("ghostfi_registered") === "true",
-      cardId: localStorage.getItem("cardId"),
-      cardStatus: (localStorage.getItem("cardStatus") as BankStore["cardStatus"]) ?? "not_issued",
-      cardLast4: localStorage.getItem("cardLast4"),
-      cardExpiry: localStorage.getItem("cardExpiry"),
-      cardBalance: Number(localStorage.getItem("cardBalance") ?? 0),
-      cardholderName: localStorage.getItem("cardholderName"),
-      _hydrated: true,
-    });
+    try {
+      set({
+        registered: localStorage.getItem("ghostfi_registered") === "true",
+        cardId: localStorage.getItem("cardId"),
+        cardStatus: (localStorage.getItem("cardStatus") as BankStore["cardStatus"]) ?? "not_issued",
+        cardLast4: localStorage.getItem("cardLast4"),
+        cardExpiry: localStorage.getItem("cardExpiry"),
+        cardBalance: Number(localStorage.getItem("cardBalance") ?? 0),
+        cardholderName: localStorage.getItem("cardholderName"),
+        _hydrated: true,
+      });
+    } catch (e) {
+      console.warn("localStorage hydration failed:", e);
+      set({ _hydrated: true });
+    }
   },
 
   setRegistered: (registered) => {
-    if (typeof window !== "undefined") localStorage.setItem("ghostfi_registered", String(registered));
+    try {
+      if (typeof window !== "undefined") localStorage.setItem("ghostfi_registered", String(registered));
+    } catch (e) {}
     set({ registered });
   },
   setShieldedBalance: (mint, amount) =>

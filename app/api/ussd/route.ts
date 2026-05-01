@@ -3,6 +3,7 @@ import { getOrCreateWallet, loadKeypair, checkRateLimit, isRegistered, setRegist
 import { getSession, updateSession, clearSession, parseMenuLevel } from "@/lib/ussd-sessions";
 import { serverGetBalance, serverShield, serverUnshield, serverSend, serverRegister } from "@/lib/server-umbra";
 import { getCardDetails, getCardBalance, freezeCard, unfreezeCard, topUpCard } from "@/lib/rain";
+import { createFundingIntent } from "@/lib/funding";
 // #6 — use the network-aware mint from the shared constant
 import { USDC_MINT } from "@/lib/umbra";
 // #13 — real tx history from the WhatsApp route's shared store
@@ -16,10 +17,11 @@ Private banking on Solana
 
 1. Check Balance
 2. Send Money
-3. Shield Funds
-4. Unshield Funds
-5. My Virtual Card
-6. Transaction History
+3. Fund Account
+4. Shield Funds
+5. Unshield Funds
+6. My Virtual Card
+7. Transaction History
 0. Exit`;
 
 // #8 — ensure wallet is registered with Umbra before any SDK operation
@@ -139,8 +141,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 3: Shield Funds
+  // 3: Fund Account
   if (choice === "3") {
+    if (level === 1) return CON("Fund your GhostFi account\n\nEnter amount in USDC:");
+    if (level === 2) {
+      const amount = parseFloat(inputs[1]);
+      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
+      const intentId = createFundingIntent(phoneNumber, amount);
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const link = `${baseUrl}/checkout?intent=${intentId}`;
+      
+      // Send the link via SMS
+      await sendSms(phoneNumber, `💵 GhostFi Funding\n\nTo fund your account with ${amount} USDC, please complete payment here:\n${link}`);
+      
+      clearSession(sessionId);
+      return END(`Payment link sent! ✓\nCheck your SMS for the checkout link to fund ${amount} USDC.`);
+    }
+  }
+
+  // 4: Shield Funds
+  if (choice === "4") {
     if (level === 1) {
       const balance = await getUsdcBalance(phoneNumber);
       return CON(`Shield Funds\nMove USDC to private balance\n\nPublic USDC balance: ${balance}\n\nEnter amount to shield:`);
@@ -167,8 +187,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 4: Unshield Funds
-  if (choice === "4") {
+  // 5: Unshield Funds
+  if (choice === "5") {
     if (level === 1) {
       const balance = await getUsdcBalance(phoneNumber);
       return CON(`Unshield Funds\nMove to public wallet\n\nPrivate balance: ${balance} USDC\n\nEnter amount to unshield:`);
@@ -195,8 +215,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 5: Virtual Card
-  if (choice === "5") {
+  // 6: Virtual Card
+  if (choice === "6") {
     const card = cardStore.get(phoneNumber);
     if (level === 1) {
       if (!card) return END("No card linked.\nVisit ghostfi.app/card to issue your card.");
@@ -230,8 +250,8 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // 6: Transaction History — #13 real data
-  if (choice === "6") {
+  // 7: Transaction History — #13 real data
+  if (choice === "7") {
     clearSession(sessionId);
     return END(`Recent Transactions:\n${formatTxHistory(phoneNumber)}`);
   }

@@ -34,12 +34,48 @@ function buildServerSigner(keypair: Keypair) {
 }
 
 export async function getServerUmbraClient(keypair: Keypair) {
+  const isDevnet = (process.env.NEXT_PUBLIC_NETWORK as "mainnet" | "devnet") === "devnet";
+  const indexerApiEndpoint = isDevnet
+    ? "https://utxo-indexer.api-devnet.umbraprivacy.com"
+    : "https://utxo-indexer.api.umbraprivacy.com";
+
+  const rpcList = [
+    process.env.NEXT_PUBLIC_RPC_URL,
+    "https://api.mainnet-beta.solana.com",
+    "https://solana-mainnet.g.allnodes.com",
+    "https://solana.publicnode.com",
+    "https://rpc.ankr.com/solana",
+  ].filter(Boolean) as string[];
+
+  let rpcUrl = "";
+  for (const rpc of rpcList) {
+    if (!rpc || rpc.includes("your-mainnet-rpc-endpoint")) continue;
+    try {
+      // Quick health check
+      const res = await fetch(rpc, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getHealth" }),
+      });
+      if (res.ok) {
+        rpcUrl = rpc;
+        break;
+      }
+    } catch (e) {
+      continue;
+    }
+  }
+
+  if (!rpcUrl) rpcUrl = "https://api.mainnet-beta.solana.com";
+
+  const rpcSubscriptionsUrl = process.env.NEXT_PUBLIC_RPC_WS_URL || rpcUrl.replace("https://", "wss://");
+
   return getUmbraClient({
     signer: buildServerSigner(keypair) as any,
-    network: (process.env.NEXT_PUBLIC_NETWORK as "mainnet" | "devnet") ?? "mainnet",
-    rpcUrl: process.env.NEXT_PUBLIC_RPC_URL!,
-    rpcSubscriptionsUrl: process.env.NEXT_PUBLIC_RPC_WS_URL!,
-    indexerApiEndpoint: "https://utxo-indexer.api.umbraprivacy.com",
+    network: isDevnet ? "devnet" : "mainnet",
+    rpcUrl,
+    rpcSubscriptionsUrl,
+    indexerApiEndpoint,
     deferMasterSeedSignature: true,
   });
 }
