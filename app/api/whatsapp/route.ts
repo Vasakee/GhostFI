@@ -11,13 +11,17 @@ import { USDC_MINT } from "@/lib/umbra";
 const FROM = process.env.TWILIO_WHATSAPP_FROM!;
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-async function handleCommand(phone: string, msg: string): Promise<string> {
-  const cmd = msg.trim().toLowerCase();
+const getConn = async () => {
+  const rpc = process.env.NEXT_PUBLIC_RPC_URL ?? "https://solana.publicnode.com";
+  return new Connection(rpc, "confirmed");
+};
 
-  const getConn = async () => {
-    const rpc = process.env.NEXT_PUBLIC_RPC_URL ?? "https://solana.publicnode.com";
-    return new Connection(rpc, "confirmed");
-  };
+async function sendWhatsApp(to: string, body: string) {
+  await client.messages.create({
+    from: FROM.startsWith("whatsapp:") ? FROM : `whatsapp:${FROM}`,
+    to: to.startsWith("whatsapp:") ? to : `whatsapp:${to}`,
+    body,
+  });
 }
 
 // #8 — ensure wallet is registered with Umbra before any SDK operation
