@@ -1,10 +1,10 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { GhostLogo } from "@/components/GhostLogo";
 import { ShieldCheck, CreditCard, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const intentId = searchParams.get("intent");
@@ -16,8 +16,6 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!intentId) return;
-    // In a real app, we'd fetch the intent details from our API
-    // For this mock, we'll just show the intent ID
     setLoading(false);
   }, [intentId]);
 
@@ -40,7 +38,7 @@ export default function CheckoutPage() {
     setProcessing(false);
   }
 
-  if (!intentId) return <div className="min-h-screen flex items-center justify-center">Invalid intent.</div>;
+  if (!intentId) return <div className="min-h-screen flex items-center justify-center text-white">Invalid intent.</div>;
 
   return (
     <main className="min-h-screen flex items-center justify-center px-4">
@@ -108,5 +106,13 @@ export default function CheckoutPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-white">Loading checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }
