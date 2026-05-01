@@ -208,7 +208,29 @@ export default function Dashboard() {
     try {
       const quote = await getPusdQuote(swapFromMint, Math.round(parseFloat(swapAmt) * 1e6));
       const tx = await buildPusdSwapTx(quote, publicKey.toBase58());
-      const sig = await executePusdSwap(tx, signTransaction as any, process.env.NEXT_PUBLIC_RPC_URL!);
+      
+      // Resilient RPC selection for swap execution
+      const rpcList = [
+        process.env.NEXT_PUBLIC_RPC_URL,
+        "https://solana-mainnet.g.allnodes.com",
+        "https://api.mainnet-beta.solana.com",
+        "https://solana.publicnode.com",
+      ].filter(Boolean) as string[];
+
+      let sig = "";
+      for (const rpc of rpcList) {
+        if (!rpc || rpc.includes("your-mainnet-rpc-endpoint")) continue;
+        try {
+          sig = await executePusdSwap(tx, signTransaction as any, rpc);
+          break;
+        } catch (err) {
+          console.warn(`Swap failed on ${rpc}, trying next...`);
+          continue;
+        }
+      }
+
+      if (!sig) throw new Error("Swap failed on all available RPCs");
+
       addTx({ type: "Swap→PUSD", amount: BigInt(quote.outAmount), mint: "PUSD", sig, ts: Date.now() });
       await fetchPublicBalances(publicKey.toBase58());
       setSwapAmt(""); setSwapQuote(null);

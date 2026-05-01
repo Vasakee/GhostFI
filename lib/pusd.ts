@@ -20,10 +20,26 @@ export async function getPusdQuote(
   inputMint: string,
   amountLamports: number
 ): Promise<SwapQuote> {
-  const url = `${JUPITER_QUOTE_API}/quote?inputMint=${inputMint}&outputMint=${PUSD_MINT}&amount=${amountLamports}&slippageBps=50`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Jupiter quote failed: ${res.statusText}`);
-  return res.json();
+  const params = new URLSearchParams({
+    inputMint,
+    outputMint: PUSD_MINT,
+    amount: amountLamports.toString(),
+    slippageBps: "50"
+  });
+  
+  try {
+    // Call our local proxy instead of Jupiter directly
+    const res = await fetch(`/api/jupiter/quote?${params.toString()}`);
+    
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || `Proxy Error (${res.status})`);
+    }
+    return res.json();
+  } catch (e: any) {
+    console.error("[getPusdQuote] Connection error:", e);
+    throw new Error(e.message || "Failed to connect to Jupiter via server proxy.");
+  }
 }
 
 /** Build a Jupiter swap transaction for inputMint → PUSD */
@@ -31,7 +47,7 @@ export async function buildPusdSwapTx(
   quote: SwapQuote,
   userPublicKey: string
 ): Promise<VersionedTransaction> {
-  const res = await fetch(`${JUPITER_QUOTE_API}/swap`, {
+  const res = await fetch("/api/jupiter/swap", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -42,7 +58,12 @@ export async function buildPusdSwapTx(
       prioritizationFeeLamports: "auto",
     }),
   });
-  if (!res.ok) throw new Error(`Jupiter swap build failed: ${res.statusText}`);
+  
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || `Jupiter swap build failed: ${res.statusText}`);
+  }
+  
   const { swapTransaction } = await res.json();
   const txBytes = Buffer.from(swapTransaction, "base64");
   return VersionedTransaction.deserialize(txBytes);

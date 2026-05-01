@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Connection, PublicKey, Transaction, Keypair } from "@solana/web3.js";
 import twilio from "twilio";
 import { getOrCreateWallet, loadKeypair, checkRateLimit, isRegistered, setRegistered } from "@/lib/whatsapp-wallets";
 import { serverGetBalance, serverShield, serverUnshield, serverSend, serverRegister, serverExportViewingKey } from "@/lib/server-umbra";
-import { getCardDetails, getCardBalance } from "@/lib/rain";
+import { getCardDetails, getCardBalance, topUpCard } from "@/lib/rain";
 import { createFundingIntent } from "@/lib/funding";
 // #6 — use the network-aware mint from the shared constant
 import { USDC_MINT } from "@/lib/umbra";
@@ -10,8 +11,13 @@ import { USDC_MINT } from "@/lib/umbra";
 const FROM = process.env.TWILIO_WHATSAPP_FROM!;
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-async function sendWhatsApp(to: string, body: string) {
-  await client.messages.create({ from: FROM, to, body });
+async function handleCommand(phone: string, msg: string): Promise<string> {
+  const cmd = msg.trim().toLowerCase();
+
+  const getConn = async () => {
+    const rpc = process.env.NEXT_PUBLIC_RPC_URL ?? "https://solana.publicnode.com";
+    return new Connection(rpc, "confirmed");
+  };
 }
 
 // #8 — ensure wallet is registered with Umbra before any SDK operation
@@ -79,7 +85,19 @@ Commands:
       const keypair = loadKeypair(phone);
       // 1. Unshield from private balance to public wallet
       await serverUnshield(keypair, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
-      // 2. Load onto card
+
+      // 2. Transfer from user's public bot wallet to Master Treasury
+      // This is the 'settlement' step where the platform collects the crypto to fund the fiat card
+      const treasuryKey = process.env.MASTER_TREASURY_KEY;
+      if (treasuryKey) {
+        const treasury = Keypair.fromSecretKey(Buffer.from(treasuryKey, "hex"));
+        const conn = await getConn();
+        // Note: For mainnet production, use createTransferInstruction from @solana/spl-token
+        // This is a simplified placeholder for the settlement transfer
+        console.log(`[Card Settlement] Settling ${amount} USDC to treasury ${treasury.publicKey.toBase58()}`);
+      }
+
+      // 3. Load onto card
       await topUpCard(card.cardId, amount);
       addTx(phone, "card_topup", amount);
       return `⛽ Successfully loaded $${amount} USDC onto your GhostFi Card! ✓\nYour card balance is updated.`;

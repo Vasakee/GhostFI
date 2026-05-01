@@ -72,8 +72,6 @@ export default function TransactionsPage() {
       .finally(() => setLoading(false));
   }, [cardId]);
 
-  if (!mounted) return <><Navbar /><TransactionsSkeleton /></>;
-
   const chainTxs: ChainTx[] = txHistory.map((t) => ({ ...t, source: "chain" }));
 
   const all: AnyTx[] = useMemo(() => {
@@ -83,9 +81,17 @@ export default function TransactionsPage() {
     ];
     // sort: card txs by date string, chain txs by ts
     return merged.sort((a, b) => {
-      const ta = a.source === "card" ? new Date(a.date).getTime() / 1000 : a.ts;
-      const tb = b.source === "card" ? new Date(b.date).getTime() / 1000 : b.ts;
-      return tb - ta;
+      const getTs = (tx: AnyTx) => {
+        if (tx.source === "card") {
+          try {
+            return new Date(tx.date).getTime() / 1000;
+          } catch {
+            return 0;
+          }
+        }
+        return tx.ts || 0;
+      };
+      return getTs(b) - getTs(a);
     });
   }, [cardTxs, chainTxs]);
 
@@ -94,21 +100,24 @@ export default function TransactionsPage() {
       const matchesFilter = (() => {
         if (filter === "All") return true;
         if (filter === "Card") return tx.source === "card";
-        if (filter === "Shield") return tx.source === "chain" && tx.type.toLowerCase() === "shield";
-        if (filter === "Send") return tx.source === "chain" && tx.type.toLowerCase() === "send";
-        if (filter === "Receive") return tx.source === "chain" && tx.type.toLowerCase() === "receive";
+        if (filter === "Shield") return (tx as any).source === "chain" && (tx as any).type.toLowerCase() === "shield";
+        if (filter === "Send") return (tx as any).source === "chain" && (tx as any).type.toLowerCase() === "send";
+        if (filter === "Receive") return (tx as any).source === "chain" && (tx as any).type.toLowerCase() === "receive";
         return true;
       })();
 
       const q = search.toLowerCase();
       const matchesSearch = q === "" || (() => {
         if (tx.source === "card") return tx.merchant.toLowerCase().includes(q) || tx.category.includes(q);
-        return tx.type.includes(q) || (MINT_LABELS[tx.mint] ?? tx.mint).toLowerCase().includes(q);
+        const ctx = tx as any;
+        return ctx.type.includes(q) || (MINT_LABELS[ctx.mint] ?? ctx.mint).toLowerCase().includes(q);
       })();
 
       return matchesFilter && matchesSearch;
     });
   }, [all, filter, search]);
+
+  if (!mounted) return <><Navbar /><TransactionsSkeleton /></>;
 
   return (
     <>
@@ -159,51 +168,54 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <div className="space-y-2">
-            {filtered.map((tx, i) => {
+            {filtered.map((tx: any, i) => {
               if (tx.source === "card") {
                 const isTopup = tx.category === "topup";
                 return (
-                  <div key={tx.id} className="flex items-center justify-between bg-gray-900 border border-gray-800/60 rounded-xl px-4 py-3 hover:border-gray-700 transition">
+                  <div key={tx.id || i} className="flex items-center justify-between bg-gray-900 border border-gray-800/60 rounded-xl px-4 py-3 hover:border-gray-700 transition">
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${isTopup ? "bg-purple-900/50 text-purple-400" : "bg-gray-800 text-gray-400"}`}>
                         {CATEGORY_ICONS[tx.category] ?? <Zap className="w-4 h-4" />}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{tx.merchant}</p>
+                        <p className="text-sm font-medium">{tx.merchant || "Unknown Merchant"}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-500">{tx.date}</span>
+                          <span className="text-xs text-gray-500">{tx.date || "Unknown Date"}</span>
                           <span className="text-[10px] bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded">Card</span>
                         </div>
                       </div>
                     </div>
                     <p className={`text-sm font-semibold tabular-nums ${isTopup ? "text-green-400" : "text-white"}`}>
-                      {isTopup ? "+" : "−"}${fmt(tx.amount)}
+                      {isTopup ? "+" : "−"}${fmt(Number(tx.amount || 0))}
                     </p>
                   </div>
                 );
               }
 
               // chain tx
-              const label = mintLabel(tx.mint);
-              const isIncoming = tx.type.toLowerCase() === "receive" || tx.type.toLowerCase() === "shield";
+              const label = mintLabel(tx.mint || "");
+              const type = (tx.type || "transaction").toLowerCase();
+              const isIncoming = type === "receive" || type === "shield";
               return (
-                <div key={`${tx.sig}-${i}`} className="flex items-center justify-between bg-gray-900 border border-gray-800/60 rounded-xl px-4 py-3 hover:border-gray-700 transition">
+                <div key={`${tx.sig || i}-${i}`} className="flex items-center justify-between bg-gray-900 border border-gray-800/60 rounded-xl px-4 py-3 hover:border-gray-700 transition">
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${isIncoming ? "bg-green-900/40 text-green-400" : "bg-gray-800 text-gray-400"}`}>
-                      {CATEGORY_ICONS[tx.type.toLowerCase()] ?? <Zap className="w-4 h-4" />}
+                      {CATEGORY_ICONS[type] ?? <Zap className="w-4 h-4" />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium capitalize">{tx.type}</p>
+                      <p className="text-sm font-medium capitalize">{type}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-500">{fmtDate(tx.ts)}</span>
+                        <span className="text-xs text-gray-500">{tx.ts ? fmtDate(tx.ts) : "Unknown Date"}</span>
                         <span className="text-[10px] bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded">On-chain</span>
-                        <a href={`https://solscan.io/tx/${tx.sig}`} target="_blank" rel="noopener noreferrer"
-                          className="text-[10px] text-brand hover:underline">View</a>
+                        {tx.sig && (
+                          <a href={`https://solscan.io/tx/${tx.sig}`} target="_blank" rel="noopener noreferrer"
+                            className="text-[10px] text-brand hover:underline">View</a>
+                        )}
                       </div>
                     </div>
                   </div>
                   <p className={`text-sm font-semibold tabular-nums ${isIncoming ? "text-green-400" : "text-white"}`}>
-                    {isIncoming ? "+" : "−"}{fmtBig(tx.amount)} {label}
+                    {isIncoming ? "+" : "−"}{fmtBig(BigInt(tx.amount || 0))} {label}
                   </p>
                 </div>
               );
