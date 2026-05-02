@@ -70,7 +70,15 @@ const nextConfig = {
     ];
   },
   webpack: (config, { isServer }) => {
-    config.resolve.fallback = { fs: false, net: false, tls: false };
+    config.resolve.fallback = { 
+      fs: false, 
+      net: false, 
+      tls: false,
+      crypto: false,
+      path: false,
+      stream: false,
+      buffer: false,
+    };
 
     config.resolve.alias = {
       ...config.resolve.alias,

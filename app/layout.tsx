@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { WalletProviderWrapper } from "@/components/WalletProvider";
+import Script from "next/script";
+import { Polyfills } from "@/components/Polyfills";
 
 export const metadata: Metadata = {
   title: "GhostFi — Private Banking on Solana",
@@ -14,9 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <script src="https://cdn.jsdelivr.net/npm/snarkjs@0.7.6/build/snarkjs.min.js" async crossOrigin="anonymous" />
       </head>
       <body>
+        <Polyfills />
+        <Script src="https://cdn.jsdelivr.net/npm/snarkjs@0.7.6/build/snarkjs.min.js" strategy="beforeInteractive" />
         {/* Ambient background orbs */}
         <div className="glow-orb glow-orb-1" />
         <div className="glow-orb glow-orb-2" />
