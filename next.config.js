@@ -82,8 +82,6 @@ const nextConfig = {
 
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@solana-mobile/wallet-adapter-mobile": false,
-      "@solana-mobile/wallet-standard-mobile": false,
       "@particle-network/chains": false,
       "@particle-network/auth": false,
       // snarkjs loaded via CDN — shim for both server and client builds
