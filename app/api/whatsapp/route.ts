@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Connection, PublicKey, Transaction, Keypair } from "@solana/web3.js";
+import { Connection, Keypair } from "@solana/web3.js";
 import twilio from "twilio";
-import { getOrCreateWallet, loadKeypair, checkRateLimit, isRegistered, setRegistered } from "@/lib/whatsapp-wallets";
+import { getOrCreateWallet, loadKeypair, checkRateLimit, isRegistered, setRegistered, addTransaction, getWalletData, updateCard } from "@/lib/whatsapp-wallets";
 import { serverGetBalance, serverShield, serverUnshield, serverSend, serverRegister, serverExportViewingKey } from "@/lib/server-umbra";
 import { getCardDetails, getCardBalance, topUpCard } from "@/lib/rain";
 import { createFundingIntent } from "@/lib/funding";
-// #6 — use the network-aware mint from the shared constant
 import { USDC_MINT } from "@/lib/umbra";
 
 const FROM = process.env.TWILIO_WHATSAPP_FROM!;
@@ -24,12 +23,11 @@ async function sendWhatsApp(to: string, body: string) {
   });
 }
 
-// #8 — ensure wallet is registered with Umbra before any SDK operation
-async function ensureRegistered(phone: string) {
+async function ensureRegistered(phone: string, secretHex: string) {
   if (isRegistered(phone)) return;
-  const keypair = loadKeypair(phone);
+  const keypair = loadKeypair(phone, secretHex);
   await serverRegister(keypair);
-  setRegistered(phone);
+  await setRegistered(phone);
 }
 
 function timeAgo(ts: number): string {
@@ -40,23 +38,7 @@ function timeAgo(ts: number): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-// In-memory tx history — replace with DB for production (issue #3)
-const txStore = new Map<string, { type: string; amount: number; ts: number }[]>();
-
-export function addTx(phone: string, type: string, amount: number) {
-  const list = txStore.get(phone) ?? [];
-  list.unshift({ type, amount, ts: Date.now() });
-  txStore.set(phone, list.slice(0, 20));
-}
-
-export function getTxHistory(phone: string) {
-  return (txStore.get(phone) ?? []).slice(0, 5);
-}
-
-// In-memory card store — replace with DB for production (issue #4)
-const cardStore = new Map<string, { cardId: string; last4: string; expiry: string }>();
-
-async function handleCommand(phone: string, msg: string): Promise<string> {
+async function handleCommand(phone: string, msg: string, secretHex: string): Promise<string> {
   const cmd = msg.trim().toLowerCase();
 
   if (["hi", "hello", "start", "help"].includes(cmd)) {
@@ -81,29 +63,16 @@ Commands:
   if (cardTopupMatch) {
     const amount = parseFloat(cardTopupMatch[1]);
     if (amount <= 0) return "❌ Invalid amount.";
-    const card = cardStore.get(phone);
+    const wallet = await getWalletData(phone);
+    const card = wallet?.card;
     if (!card) return "💳 No card linked. Visit https://ghostfi.app/card first.";
     
     try {
-      await ensureRegistered(phone);
-      const keypair = loadKeypair(phone);
-      // 1. Unshield from private balance to public wallet
+      await ensureRegistered(phone, secretHex);
+      const keypair = loadKeypair(phone, secretHex);
       await serverUnshield(keypair, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
-
-      // 2. Transfer from user's public bot wallet to Master Treasury
-      // This is the 'settlement' step where the platform collects the crypto to fund the fiat card
-      const treasuryKey = process.env.MASTER_TREASURY_KEY;
-      if (treasuryKey) {
-        const treasury = Keypair.fromSecretKey(Buffer.from(treasuryKey, "hex"));
-        const conn = await getConn();
-        // Note: For mainnet production, use createTransferInstruction from @solana/spl-token
-        // This is a simplified placeholder for the settlement transfer
-        console.log(`[Card Settlement] Settling ${amount} USDC to treasury ${treasury.publicKey.toBase58()}`);
-      }
-
-      // 3. Load onto card
       await topUpCard(card.cardId, amount);
-      addTx(phone, "card_topup", amount);
+      await addTransaction(phone, "card_topup", amount);
       return `⛽ Successfully loaded $${amount} USDC onto your GhostFi Card! ✓\nYour card balance is updated.`;
     } catch (e: any) {
       return `❌ Card top-up failed: ${e?.message ?? "insufficient private balance"}`;
@@ -121,8 +90,8 @@ Commands:
   }
 
   if (cmd === "balance") {
-    await ensureRegistered(phone);
-    const keypair = loadKeypair(phone);
+    await ensureRegistered(phone, secretHex);
+    const keypair = loadKeypair(phone, secretHex);
     const balances = await serverGetBalance(keypair, [USDC_MINT]);
     const raw = balances.get(USDC_MINT) ?? 0n;
     const amount = (Number(raw) / 1_000_000).toFixed(2);
@@ -130,29 +99,32 @@ Commands:
   }
 
   if (cmd === "address") {
-    const { publicKey } = getOrCreateWallet(phone);
+    const { publicKey } = await getOrCreateWallet(phone);
     return `📍 Your GhostFi wallet address:\n${publicKey}\n\nUse this to receive SOL and USDC.`;
   }
 
   if (cmd === "history") {
-    const txs = getTxHistory(phone);
+    const wallet = await getWalletData(phone);
+    const txs = (wallet?.transactions ?? []).slice(0, 5);
     if (!txs.length) return "📋 No transactions yet.";
     const icons: Record<string, string> = { shield: "🔒", unshield: "🔓", send: "📤", receive: "📥" };
-    const lines = txs.map((t, i) =>
+    const lines = txs.map((t: any, i: number) =>
       `${i + 1}. ${icons[t.type] ?? "•"} ${t.type === "send" ? "Sent" : t.type.charAt(0).toUpperCase() + t.type.slice(1)} ${t.amount} USDC — ${timeAgo(t.ts)}`
     );
     return `📋 Recent Activity:\n${lines.join("\n")}`;
   }
 
   if (cmd === "card") {
-    const card = cardStore.get(phone);
+    const wallet = await getWalletData(phone);
+    const card = wallet?.card;
     if (!card) return `💳 No card linked.\n\nVisit https://ghostfi.app/card to issue your GhostFi virtual card first.`;
     const { balance } = await getCardBalance(card.cardId);
     return `💳 Your GhostFi Virtual Card\n**** **** **** ${card.last4}\nExpires: ${card.expiry}\nBalance: $${balance.toFixed(2)} USDC\n\nReply 'reveal card' to see full details.`;
   }
 
   if (cmd === "reveal card") {
-    const card = cardStore.get(phone);
+    const wallet = await getWalletData(phone);
+    const card = wallet?.card;
     if (!card) return `💳 No card linked. Visit https://ghostfi.app/card first.`;
     const details = await getCardDetails(card.cardId);
     return `⚠️ Card details (delete this message after noting):\nNumber: ${details.cardNumber}\nCVV: ${details.cvv}\nExpiry: ${details.expiry}\n\nThis message is your responsibility to delete.`;
@@ -162,10 +134,10 @@ Commands:
   if (shieldMatch) {
     const amount = parseFloat(shieldMatch[1]);
     if (isNaN(amount) || amount <= 0) return "❌ Invalid amount.";
-    await ensureRegistered(phone);
-    const keypair = loadKeypair(phone);
+    await ensureRegistered(phone, secretHex);
+    const keypair = loadKeypair(phone, secretHex);
     await serverShield(keypair, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
-    addTx(phone, "shield", amount);
+    await addTransaction(phone, "shield", amount);
     return `🔒 Shielded ${amount} USDC successfully.\nYour balance is now private.`;
   }
 
@@ -173,10 +145,10 @@ Commands:
   if (unshieldMatch) {
     const amount = parseFloat(unshieldMatch[1]);
     if (isNaN(amount) || amount <= 0) return "❌ Invalid amount.";
-    await ensureRegistered(phone);
-    const keypair = loadKeypair(phone);
+    await ensureRegistered(phone, secretHex);
+    const keypair = loadKeypair(phone, secretHex);
     await serverUnshield(keypair, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
-    addTx(phone, "unshield", amount);
+    await addTransaction(phone, "unshield", amount);
     return `🔓 Unshielded ${amount} USDC to your public wallet.`;
   }
 
@@ -185,13 +157,13 @@ Commands:
     const amount = parseFloat(sendMatch[1]);
     const recipientPhone = sendMatch[2].replace(/[\s\-()]/g, "");
     if (isNaN(amount) || amount <= 0) return "❌ Invalid amount.";
-    await ensureRegistered(phone);
-    const senderKeypair = loadKeypair(phone);
-    const { publicKey: recipientAddress } = getOrCreateWallet(recipientPhone);
-    await serverSend(senderKeypair, recipientAddress, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
-    const viewingKey = await serverExportViewingKey(senderKeypair);
-    addTx(phone, "send", amount);
-    return `✅ Sent ${amount} USDC privately.\nTransaction is confidential on-chain.\nReference: ${viewingKey.slice(0, 8)}`;
+    await ensureRegistered(phone, secretHex);
+    const senderKeypair = loadKeypair(phone, secretHex);
+    const { publicKey: recipientAddress } = await getOrCreateWallet(recipientPhone);
+    const result = await serverSend(senderKeypair, recipientAddress, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
+    const signature = (result as any)?.signature ?? String(result ?? "");
+    await addTransaction(phone, "send", amount, signature);
+    return `✅ Sent ${amount} USDC privately.\nTransaction is confidential on-chain.\nReference: ${signature.slice(0, 8)}`;
   }
 
   return `I didn't understand that.\nReply 'help' to see available commands.`;
@@ -201,7 +173,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
 
-    // #5 — Validate Twilio webhook signature
     const twilioSig = req.headers.get("x-twilio-signature") ?? "";
     const webhookUrl = process.env.WHATSAPP_WEBHOOK_SECRET
       ? `${process.env.NEXT_PUBLIC_APP_URL}/api/whatsapp`
@@ -223,8 +194,7 @@ export async function POST(req: NextRequest) {
       return new NextResponse("OK");
     }
 
-    // #12 — Explicit onboarding message for new users
-    const { isNew, publicKey } = getOrCreateWallet(from);
+    const { isNew, publicKey, encryptedSecretKey } = await getOrCreateWallet(from);
     if (isNew) {
       await sendWhatsApp(from,
         `👻 Welcome to GhostFi!\n\n` +
@@ -239,7 +209,7 @@ export async function POST(req: NextRequest) {
 
     let reply: string;
     try {
-      reply = await handleCommand(from, msgBody);
+      reply = await handleCommand(from, msgBody, encryptedSecretKey);
     } catch (e: any) {
       console.error("[whatsapp] command error:", e?.message);
       reply = `❌ Something went wrong: ${e?.message ?? "unknown error"}\n\nPlease try again or reply 'help'.`;
