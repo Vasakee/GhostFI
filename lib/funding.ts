@@ -1,41 +1,24 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import path from "path";
 import { randomUUID } from "crypto";
+import dbConnect from "./mongodb";
+import { FundingIntentModel } from "./models";
 
-const FUNDING_FILE = path.join(process.cwd(), "data", "pending-funding.json");
-
-interface FundingIntent {
-  intentId: string;
-  phone: string;
-  amount: number;
-  ts: number;
-}
-
-function loadIntents(): Record<string, FundingIntent> {
-  if (!existsSync(FUNDING_FILE)) return {};
-  return JSON.parse(readFileSync(FUNDING_FILE, "utf8"));
-}
-
-function saveIntents(intents: Record<string, FundingIntent>) {
-  mkdirSync(path.dirname(FUNDING_FILE), { recursive: true });
-  writeFileSync(FUNDING_FILE, JSON.stringify(intents, null, 2));
-}
-
-export function createFundingIntent(phone: string, amount: number): string {
-  const intents = loadIntents();
+export async function createFundingIntent(phone: string, amount: number): Promise<string> {
+  await dbConnect();
   const intentId = randomUUID();
-  intents[intentId] = { intentId, phone, amount, ts: Date.now() };
-  saveIntents(intents);
+  await FundingIntentModel.create({
+    intentId,
+    phone,
+    amount,
+  });
   return intentId;
 }
 
-export function getFundingIntent(intentId: string): FundingIntent | null {
-  const intents = loadIntents();
-  return intents[intentId] ?? null;
+export async function getFundingIntent(intentId: string) {
+  await dbConnect();
+  return await FundingIntentModel.findOne({ intentId });
 }
 
-export function removeFundingIntent(intentId: string) {
-  const intents = loadIntents();
-  delete intents[intentId];
-  saveIntents(intents);
+export async function removeFundingIntent(intentId: string) {
+  await dbConnect();
+  await FundingIntentModel.deleteOne({ intentId });
 }

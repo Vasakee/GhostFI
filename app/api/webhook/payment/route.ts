@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Connection, PublicKey, Keypair, Transaction, SystemProgram, sendAndConfirmTransaction } from "@solana/web3.js";
 import { getFundingIntent, removeFundingIntent } from "@/lib/funding";
-import { loadKeypair } from "@/lib/whatsapp-wallets";
+import { getWalletData, loadKeypair } from "@/lib/whatsapp-wallets";
 import { USDC_MINT } from "@/lib/umbra";
 import twilio from "twilio";
 
@@ -11,7 +11,8 @@ const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_A
 async function sendNotification(phone: string, message: string) {
   try {
     if (phone.includes("+") && process.env.TWILIO_AUTH_TOKEN) {
-      await twilioClient.messages.create({ from: TWILIO_FROM, to: `whatsapp:${phone}`, body: message });
+      const target = phone.startsWith("whatsapp:") ? phone : `whatsapp:${phone}`;
+      await twilioClient.messages.create({ from: TWILIO_FROM, to: target, body: message });
     }
   } catch (e) {
     console.warn("Failed to send WhatsApp notification:", e);
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   const { intentId, status } = await req.json();
   if (status !== "success") return NextResponse.json({ error: "Payment not successful" }, { status: 400 });
 
-  const intent = getFundingIntent(intentId);
+  const intent = await getFundingIntent(intentId);
   if (!intent) return NextResponse.json({ error: "Invalid intent" }, { status: 404 });
 
   const rpc = process.env.NEXT_PUBLIC_RPC_URL ?? "https://solana.publicnode.com";
@@ -37,7 +38,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const treasury = Keypair.fromSecretKey(Buffer.from(treasuryKeyHex, "hex"));
-    const userKeypair = loadKeypair(intent.phone);
+    const walletData = await getWalletData(intent.phone);
+    if (!walletData) throw new Error("Wallet not found for this intent");
+    
+    const userKeypair = loadKeypair(intent.phone, walletData.encryptedSecretKey);
     const destination = userKeypair.publicKey;
 
     console.log(`[Webhook] Funding ${intent.phone} (${destination.toBase58()}) with ${intent.amount} USDC`);
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
     // Notify user
     await sendNotification(intent.phone, `💵 GhostFi Funding Successful! ✓\n\nYou received ${intent.amount} USDC and a small gas drip for fees.\n\nReply 'shield ${intent.amount}' to make your balance private! 👻`);
 
-    removeFundingIntent(intentId);
+    await removeFundingIntent(intentId);
     return NextResponse.json({ success: true, sig });
   } catch (e: any) {
     console.error("[Webhook] Fulfillment failed:", e);

@@ -34,3 +34,12 @@ const SessionSchema = new mongoose.Schema({
 });
 
 export const Session = mongoose.models.Session || mongoose.model("Session", SessionSchema);
+
+const FundingIntentSchema = new mongoose.Schema({
+  intentId: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
+  amount: { type: Number, required: true },
+  ts: { type: Number, default: Date.now, expires: 86400 }, // Auto-delete after 24 hours
+});
+
+export const FundingIntentModel = mongoose.models.FundingIntent || mongoose.model("FundingIntent", FundingIntentSchema);
