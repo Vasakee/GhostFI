@@ -169,6 +169,25 @@ Commands:
   return `I didn't understand that.\nReply 'help' to see available commands.`;
 }
 
+function formatError(e: any): string {
+  const msg = e?.message ?? "Unknown error";
+  
+  // Detect common Solana/Umbra issues
+  if (msg.includes("-32002") || msg.includes("simulation failed")) {
+    return "⛽ *Gas Fee Required*\n\nYour GhostFi wallet has 0.00 SOL. You need a tiny amount of SOL to check balances or send funds.\n\n📍 *Action:* Send 0.05 SOL to your address using the 'address' command.";
+  }
+  
+  if (msg.includes("insufficient funds") || msg.includes("0x1")) {
+    return "❌ *Insufficient Balance*\n\nYou don't have enough USDC for this transaction.";
+  }
+
+  if (msg.includes("403") || msg.includes("Forbidden")) {
+    return "🚫 *Access Denied*\n\nThere was a security verification issue. Please try again in a moment.";
+  }
+
+  return `❌ *Something went wrong*\n\n${msg.split(";")[0]}\n\nPlease try again or reply 'help'.`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
@@ -197,11 +216,10 @@ export async function POST(req: NextRequest) {
     const { isNew, publicKey, encryptedSecretKey } = await getOrCreateWallet(from);
     if (isNew) {
       await sendWhatsApp(from,
-        `👻 Welcome to GhostFi!\n\n` +
+        `👻 *Welcome to GhostFi!*\n\n` +
         `Your private Solana wallet has been created and linked to your phone number.\n\n` +
-        `📍 Your wallet address:\n${publicKey}\n\n` +
-        `⚠️ This is a custodial wallet — GhostFi holds your encrypted key server-side. ` +
-        `Never send large amounts without understanding the risks.\n\n` +
+        `📍 *Your address:* \`${publicKey}\`\n\n` +
+        `⚠️ *Safety:* GhostFi holds your encrypted key server-side. Never send large amounts.\n\n` +
         `Reply 'help' to see all commands.`
       );
       return new NextResponse("OK");
@@ -212,7 +230,7 @@ export async function POST(req: NextRequest) {
       reply = await handleCommand(from, msgBody, encryptedSecretKey);
     } catch (e: any) {
       console.error("[whatsapp] command error:", e?.message);
-      reply = `❌ Something went wrong: ${e?.message ?? "unknown error"}\n\nPlease try again or reply 'help'.`;
+      reply = formatError(e);
     }
 
     await sendWhatsApp(from, reply);

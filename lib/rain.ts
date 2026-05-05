@@ -39,7 +39,7 @@ export async function issueCard(_userId: string, name: string, _email: string) {
 }
 
 export async function getCardDetails(cardId: string) {
-  if (MOCK || cardId.startsWith("mock_")) return { cardNumber: "4242424242424242", cvv: "737", expiry: "12/28" };
+  if (MOCK || !cardId || cardId.startsWith("mock_")) return { cardNumber: "4242424242424242", cvv: "737", expiry: "12/28" };
   const card = await lithicFetch(`/cards/${cardId}`);
   return {
     cardNumber: card.pan,
@@ -49,7 +49,7 @@ export async function getCardDetails(cardId: string) {
 }
 
 export async function topUpCard(cardId: string, amount: number) {
-  if (MOCK || cardId.startsWith("mock_")) return { success: true };
+  if (MOCK || !cardId || cardId.startsWith("mock_")) return { success: true };
   // Lithic sandbox: simulate a book transfer to load funds onto the card's financial account
   await lithicFetch(`/simulate/authorize`, {
     method: "POST",
@@ -63,7 +63,7 @@ export async function topUpCard(cardId: string, amount: number) {
 }
 
 export async function getCardBalance(cardId: string) {
-  if (MOCK || cardId.startsWith("mock_")) return { balance: 142.50, currency: "USD" };
+  if (MOCK || !cardId || cardId.startsWith("mock_")) return { balance: 142.50, currency: "USD" };
   const data = await lithicFetch(`/cards/${cardId}`);
   // spend_limit is in cents; available balance derived from spend_limit - used
   const available = typeof data.spend_limit === "number" ? data.spend_limit / 100 : 0;
@@ -71,7 +71,7 @@ export async function getCardBalance(cardId: string) {
 }
 
 export async function getCardTransactions(cardId: string) {
-  if (MOCK || cardId.startsWith("mock_")) return { transactions: MOCK_TXS };
+  if (MOCK || !cardId || cardId.startsWith("mock_")) return { transactions: MOCK_TXS };
   const data = await lithicFetch(`/transactions?card_token=${cardId}&page_size=20`);
   const transactions = (data.data ?? []).map((tx: any) => ({
     id: tx.token,
@@ -88,13 +88,13 @@ export async function getCardTransactions(cardId: string) {
 }
 
 export async function freezeCard(cardId: string) {
-  if (MOCK || cardId.startsWith("mock_")) return { status: "frozen" };
+  if (MOCK || !cardId || cardId.startsWith("mock_")) return { status: "frozen" };
   await lithicFetch(`/cards/${cardId}`, { method: "PATCH", body: JSON.stringify({ state: "PAUSED" }) });
   return { status: "frozen" };
 }
 
 export async function unfreezeCard(cardId: string) {
-  if (MOCK || cardId.startsWith("mock_")) return { status: "active" };
+  if (MOCK || !cardId || cardId.startsWith("mock_")) return { status: "active" };
   await lithicFetch(`/cards/${cardId}`, { method: "PATCH", body: JSON.stringify({ state: "OPEN" }) });
   return { status: "active" };
 }
