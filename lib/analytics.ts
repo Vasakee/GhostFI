@@ -8,7 +8,7 @@ import { TransactionInstruction, PublicKey } from "@solana/web3.js";
  * easily indexable and searchable on Dune Dashboards.
  */
 
-const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXibP2pMkw67K3N968vC2AqyP3NToX");
+const MEMO_PROGRAM_ID = "MemoSq4gqABAXibP2pMkw67K3N968vC2AqyP3NToX";
 
 export type GhostFiActivity = 
   | "shield" 
@@ -30,7 +30,7 @@ export function createDuneMemo(activity: GhostFiActivity, platform: "ussd" | "wh
   
   return new TransactionInstruction({
     keys: [],
-    programId: MEMO_PROGRAM_ID,
+    programId: new PublicKey(MEMO_PROGRAM_ID),
     data: Buffer.from(memoData, "utf-8"),
   });
 }

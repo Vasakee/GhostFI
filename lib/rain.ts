@@ -9,7 +9,7 @@ const MOCK = !API_KEY;
 // Prefer Raenest for the Hackathon (Superteam Nigeria Track)
 const PREFER_RAENEST = true;
 
-const MOCK_TXS = [];
+const MOCK_TXS: any[] = [];
 
 async function lithicFetch(path: string, options?: RequestInit) {
   const res = await fetch(`${BASE}${path}`, {

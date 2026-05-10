@@ -2,7 +2,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 
 // Minimal SNS Resolution without the heavy library
 // This uses the official Bonfida Name Service program ID
-const NAME_PROGRAM_ID = new PublicKey("namesLPneUptT99LHv92M5N1zYmXos37Y47Yrkf9976");
+const NAME_PROGRAM_ID = "namesLPneUptT99LHv92M5N1zYmXos37Y47Yrkf9976";
 
 /**
  * Resolves a .sol domain to a Solana Public Key

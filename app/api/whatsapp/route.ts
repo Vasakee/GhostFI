@@ -64,10 +64,6 @@ function timeAgo(ts: number): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-import { FEATURE_FLAGS } from "@/lib/config";
-
-...
-
 async function handleCommand(phone: string, msg: string, secretHex: string): Promise<string> {
   const cmd = msg.trim().toLowerCase();
 

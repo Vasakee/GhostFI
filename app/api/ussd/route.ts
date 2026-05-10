@@ -101,7 +101,6 @@ export async function POST(req: NextRequest) {
   }
 
   const incomingUsername = params.get("username");
-...
   if (incomingUsername && incomingUsername !== (process.env.AT_USERNAME ?? "sandbox")) {
     return END("Unauthorized.");
   }
