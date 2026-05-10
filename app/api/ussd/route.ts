@@ -7,6 +7,9 @@ import { raenest } from "@/lib/raenest";
 import { createFundingIntent } from "@/lib/funding";
 import { USDC_MINT, PUSD_MINT, USDT_MINT, USDG_MINT } from "@/lib/umbra";
 import { DEMO_MODE } from "@/lib/config";
+import { resolveSns } from "@/lib/sns";
+import { trackEvent } from "@/lib/analytics";
+import { Connection } from "@solana/web3.js";
 
 const CON = (text: string) => new NextResponse(`CON ${text}`, { headers: { "Content-Type": "text/plain" } });
 const END = (text: string) => new NextResponse(`END ${text}`, { headers: { "Content-Type": "text/plain" } });
@@ -136,26 +139,44 @@ Encrypted on Solana.`);
 
   if (choice === "2") {
     if (level === 1) return CON(`Send Private Transfer\n\n1. USDC\n2. USDT\n3. USDG`);
-    if (level === 2) return CON(`Enter recipient phone number:\n(e.g. 2348012345678)`);
+    if (level === 2) return CON(`Enter recipient phone or .sol domain:`);
     if (level === 3) return CON(`Enter amount to send:`);
     if (level === 4) {
       const amount = parseFloat(inputs[3]);
       if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
       const assetMap: Record<string, string> = { "1": "USDC", "2": "USDT", "3": "USDG" };
-      return CON(`Confirm transfer:\nAsset: ${assetMap[inputs[1]] || "USDC"}\nTo: +${inputs[2]}\nAmount: ${amount}\n\n1. Confirm\n2. Cancel`);
+      return CON(`Confirm transfer:\nAsset: ${assetMap[inputs[1]] || "USDC"}\nTo: ${inputs[2]}\nAmount: ${amount}\n\n1. Confirm\n2. Cancel`);
     }
     if (level === 5) {
       if (inputs[4] === "2") { await clearSession(sessionId); return END("Transfer cancelled."); }
       const amount = parseFloat(inputs[3]);
       const mintMap: Record<string, string> = { "1": USDC_MINT, "2": USDT_MINT, "3": USDG_MINT };
       const mint = mintMap[inputs[1]] || USDC_MINT;
+      const recipientRaw = inputs[2];
+      
       try {
         await ensureRegistered(phoneNumber, encryptedSecretKey);
         const keypair = loadKeypair(phoneNumber, encryptedSecretKey);
-        const { publicKey: recipientAddress } = await getOrCreateWallet(inputs[2]);
+        
+        let recipientAddress: string;
+        let isSns = false;
+        
+        if (recipientRaw.includes(".") || /^[a-zA-Z]/.test(recipientRaw)) {
+          const rpc = process.env.NEXT_PUBLIC_RPC_URL ?? "https://solana.publicnode.com";
+          const conn = new Connection(rpc, "confirmed");
+          const resolved = await resolveSns(recipientRaw, conn);
+          if (!resolved) return END("Could not resolve SNS name.");
+          recipientAddress = resolved.toBase58();
+          isSns = true;
+        } else {
+          const { publicKey: pubkey } = await getOrCreateWallet(recipientRaw);
+          recipientAddress = pubkey;
+        }
+
         const result = await serverSend(keypair, recipientAddress, mint, BigInt(Math.round(amount * 1_000_000)));
         const signature = (result as any)?.signature ?? String(result ?? "");
         await addTransaction(phoneNumber, "send", amount, signature);
+        await trackEvent("send", { platform: "ussd", isSns, amount });
         await clearSession(sessionId);
         return END(`Transfer successful! ✓\nSent ${amount} privately.\nRef: ${signature.slice(0, 8)}`);
       } catch (e: any) {
@@ -166,14 +187,17 @@ Encrypted on Solana.`);
   }
 
   if (choice === "3") {
-    if (level === 1) return CON("Fund your GhostFi account\n\nEnter amount in USDC:");
-    if (level === 2) {
-      const amount = parseFloat(inputs[1]);
+    if (level === 1) return CON("Fund your GhostFi account\n\n1. USDC\n2. USDT");
+    if (level === 2) return CON(`Enter amount in ${inputs[1] === "1" ? "USDC" : "USDT"}:`);
+    if (level === 3) {
+      const amount = parseFloat(inputs[2]);
       if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
-      const intentId = createFundingIntent(phoneNumber, amount);
+      const asset = inputs[1] === "1" ? "USDC" : "USDT";
+      const intentId = await createFundingIntent(phoneNumber, amount, asset);
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       const link = `${baseUrl}/checkout?intent=${intentId}`;
-      await sendSms(phoneNumber, `💵 GhostFi Funding\n\nTo fund your account with ${amount} USDC, please complete payment here:\n${link}`);
+      await sendSms(phoneNumber, `💵 GhostFi Funding\n\nTo fund your account with ${amount} ${asset}, please complete payment here:\n${link}`);
+      await trackEvent("fund", { platform: "ussd", amount, asset });
       await clearSession(sessionId);
       return END(`Payment link sent! ✓\nCheck your SMS for the checkout link.`);
     }

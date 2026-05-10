@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { Connection, PublicKey, Keypair, Transaction, SystemProgram, sendAndConfirmTransaction } from "@solana/web3.js";
 import { getFundingIntent, removeFundingIntent } from "@/lib/funding";
 import { getWalletData, loadKeypair } from "@/lib/whatsapp-wallets";
-import { USDC_MINT } from "@/lib/umbra";
+import { USDC_MINT, USDT_MINT } from "@/lib/umbra";
 import twilio from "twilio";
+import { createDuneMemo, trackEvent } from "@/lib/analytics";
 
 const TWILIO_FROM = process.env.TWILIO_WHATSAPP_FROM!;
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -43,10 +44,14 @@ export async function POST(req: NextRequest) {
     
     const userKeypair = loadKeypair(intent.phone, walletData.encryptedSecretKey);
     const destination = userKeypair.publicKey;
+    const asset = intent.asset || "USDC";
 
-    console.log(`[Webhook] Funding ${intent.phone} (${destination.toBase58()}) with ${intent.amount} USDC`);
+    console.log(`[Webhook] Funding ${intent.phone} (${destination.toBase58()}) with ${intent.amount} ${asset}`);
 
     const tx = new Transaction();
+
+    // 0. Add Dune Memo for analytics
+    tx.add(createDuneMemo("fund", intent.phone.startsWith("whatsapp:") ? "whatsapp" : "ussd"));
 
     // 1. Check for SOL Gas Drip (0.02 SOL)
     const solBalance = await conn.getBalance(destination);
@@ -59,15 +64,18 @@ export async function POST(req: NextRequest) {
       console.log("[Webhook] Adding 0.02 SOL gas drip");
     }
 
-    // 2. Add USDC Transfer (Simulated here, in real app use @solana/spl-token)
-    // For this mock/MVP, we'll assume the treasury sends the tokens.
-    // Note: Manual SPL transfer construction is omitted for brevity but required for full mainnet.
+    // 2. Add Asset Transfer (Simulated here)
+    // In a real app, use @solana/spl-token to transfer either USDC_MINT or USDT_MINT
     
     const sig = await sendAndConfirmTransaction(conn, tx, [treasury]);
     console.log("[Webhook] Transaction successful:", sig);
 
+    // Track for Dune & Analytics
+    await trackEvent("fund", { phone: intent.phone, amount: intent.amount, asset });
+
     // Notify user
-    await sendNotification(intent.phone, `💵 GhostFi Funding Successful! ✓\n\nYou received ${intent.amount} USDC and a small gas drip for fees.\n\nReply 'shield ${intent.amount}' to make your balance private! 👻`);
+    const shieldCmd = `shield ${intent.amount}${asset === "USDT" ? " usdt" : ""}`;
+    await sendNotification(intent.phone, `💵 GhostFi Funding Successful! ✓\n\nYou received ${intent.amount} ${asset} and a small gas drip for fees.\n\nReply '${shieldCmd}' to make your balance private! 👻`);
 
     await removeFundingIntent(intentId);
     return NextResponse.json({ success: true, sig });

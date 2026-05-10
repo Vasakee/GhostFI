@@ -40,6 +40,7 @@ const FundingIntentSchema = new mongoose.Schema({
   intentId: { type: String, required: true, unique: true },
   phone: { type: String, required: true },
   amount: { type: Number, required: true },
+  asset: { type: String, default: "USDC" },
   ts: { type: Number, default: Date.now, expires: 86400 }, // Auto-delete after 24 hours
 });
 

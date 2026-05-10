@@ -5,9 +5,11 @@ import { getOrCreateWallet, loadKeypair, checkRateLimit, isRegistered, setRegist
 import { serverGetBalance, serverShield, serverUnshield, serverSend, serverRegister, serverExportViewingKey } from "@/lib/server-umbra";
 import { getCardDetails, getCardBalance, topUpCard } from "@/lib/rain";
 import { createFundingIntent } from "@/lib/funding";
-import { USDC_MINT, PUSD_MINT, USDT_MINT } from "@/lib/umbra";
+import { USDC_MINT, PUSD_MINT, USDT_MINT, USDG_MINT } from "@/lib/umbra";
 import { raenest } from "@/lib/raenest";
-import { DEMO_MODE } from "@/lib/config";
+import { DEMO_MODE, FEATURE_FLAGS } from "@/lib/config";
+import { resolveSns } from "@/lib/sns";
+import { trackEvent } from "@/lib/analytics";
 
 const FROM = process.env.TWILIO_WHATSAPP_FROM!;
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -154,14 +156,16 @@ We prioritize protocol safety and user privacy above all.`;
     }
   }
 
-  const fundMatch = cmd.match(/^fund\s+([\d.]+)$/);
+  const fundMatch = cmd.match(/^fund\s+([\d.]+)(\s+usdt)?$/);
   if (fundMatch) {
     const amount = parseFloat(fundMatch[1]);
+    const asset = fundMatch[2] ? "USDT" : "USDC";
     if (amount <= 0) return "❌ Invalid amount.";
-    const intentId = createFundingIntent(phone, amount);
+    const intentId = await createFundingIntent(phone, amount, asset);
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const link = `${baseUrl}/checkout?intent=${intentId}`;
-    return `💵 Fund Account: ${amount} USDC\n\nPlease complete your payment at this link:\n${link}`;
+    await trackEvent("fund", { platform: "whatsapp", amount, asset });
+    return `💵 Fund Account: ${amount} ${asset}\n\nPlease complete your payment at this link:\n${link}`;
   }
 
   if (cmd === "balance") {
@@ -240,6 +244,7 @@ Your funds are encrypted on-chain.`;
     const keypair = loadKeypair(phone, secretHex);
     await serverShield(keypair, mint, BigInt(Math.round(amount * 1_000_000)));
     await addTransaction(phone, "shield", amount);
+    await trackEvent("shield", { platform: "whatsapp", amount, asset: shieldMatch[2] ? "USDT" : "USDC" });
     return `🔒 Shielded ${amount} successfully. Balance is now private.`;
   }
 
@@ -251,21 +256,40 @@ Your funds are encrypted on-chain.`;
     const keypair = loadKeypair(phone, secretHex);
     await serverUnshield(keypair, mint, BigInt(Math.round(amount * 1_000_000)));
     await addTransaction(phone, "unshield", amount);
+    await trackEvent("unshield", { platform: "whatsapp", amount, asset: unshieldMatch[2] ? "USDT" : "USDC" });
     return `🔓 Unshielded ${amount} to your public wallet.`;
   }
 
-  const sendMatch = msg.trim().match(/^send\s+([\d.]+)\s+(\+?[\d\s\-()]+)(\s+usdt)?$/i);
+  const sendMatch = msg.trim().match(/^send\s+([\d.]+)\s+([^\s]+)(\s+usdt)?$/i);
   if (sendMatch) {
     const amount = parseFloat(sendMatch[1]);
-    const recipientPhone = sendMatch[2].replace(/[\s\-()]/g, "");
+    const recipientRaw = sendMatch[2];
     const mint = sendMatch[3] ? USDT_MINT : USDC_MINT;
+
+    let recipientAddress: string;
+    let isSns = false;
+
+    if (recipientRaw.includes(".") || /^[a-zA-Z]/.test(recipientRaw)) {
+      const conn = await getConn();
+      const resolved = await resolveSns(recipientRaw, conn);
+      if (!resolved) return `❌ Could not resolve SNS name: ${recipientRaw}`;
+      recipientAddress = resolved.toBase58();
+      isSns = true;
+    } else {
+      const phone = recipientRaw.replace(/[\s\-()]/g, "");
+      const wallet = await getOrCreateWallet(phone);
+      recipientAddress = wallet.publicKey;
+    }
+
     await ensureRegistered(phone, secretHex);
     const senderKeypair = loadKeypair(phone, secretHex);
-    const { publicKey: recipientAddress } = await getOrCreateWallet(recipientPhone);
     const result = await serverSend(senderKeypair, recipientAddress, mint, BigInt(Math.round(amount * 1_000_000)));
     const signature = (result as any)?.signature ?? String(result ?? "");
+    
     await addTransaction(phone, "send", amount, signature);
-    return `✅ Sent ${amount} privately.\nRef: ${signature.slice(0, 8)}`;
+    await trackEvent("send", { platform: "whatsapp", isSns, amount });
+    
+    return `✅ Sent ${amount} privately to ${isSns ? recipientRaw : "the recipient"}.\nRef: ${signature.slice(0, 8)}`;
   }
 
   return `I didn't understand that.\nReply 'help' to see available commands.`;
