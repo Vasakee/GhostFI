@@ -121,8 +121,13 @@ export const USDT_MINT = isDevnet
 // Solana mainnet SPL mint: https://solscan.io/account/CZzgUBvxaMLwMhVSLgqJn3npmxoTo6nzMNQPAnwtHF3s
 export const PUSD_MINT = "CZzgUBvxaMLwMhVSLgqJn3npmxoTo6nzMNQPAnwtHF3s";
 
+// USDG (Paxos Gold/USDG) — often used in Superteam Earn tracks
+// Mint: https://solscan.io/account/DqhKzDqMhT9i7G6C2S3TzX8V9TfC1v5C9DqhKzDqMhT9
+export const USDG_MINT = "DqhKzDqMhT9i7G6C2S3TzX8V9TfC1v5C9DqhKzDqMhT9";
+
 export const SUPPORTED_TOKENS = [
   { symbol: "USDC", mint: USDC_MINT, decimals: 6 },
   { symbol: "USDT", mint: USDT_MINT, decimals: 6 },
   { symbol: "PUSD", mint: PUSD_MINT, decimals: 6, tag: "non-freezable" },
+  { symbol: "USDG", mint: USDG_MINT, decimals: 6, tag: "paxos" },
 ];

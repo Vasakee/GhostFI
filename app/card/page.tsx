@@ -313,7 +313,7 @@ export default function CardPage() {
           onSuccess={bal => { setCardBalance(bal); setShowTopUp(false); }} />
       )}
 
-      <main className="max-w-lg mx-auto px-4 py-8 space-y-5">
+      <main className="max-w-lg mx-auto px-4 py-6 sm:py-8 space-y-5 pb-28 md:pb-8">
         <p className="text-center text-xs text-purple-400 tracking-widest uppercase">🔒 Funded privately. Spend freely.</p>
 
         {/* card */}

@@ -4,3 +4,12 @@ node_modules/
 tsconfig.tsbuildinfo
 package-lock.json
 data/
+
+# Hackathon / Demo Assets
+app/demo/
+pitch-deck.html
+PITCH.md
+AUDIT_REPORT.md
+UI_FIXES_SUMMARY.md
+ROADMAP.md
+

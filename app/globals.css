@@ -188,6 +188,7 @@ body::before {
   background: linear-gradient(135deg, #6C47FF, #8b5cf6);
   box-shadow: 0 4px 24px rgba(108, 71, 255, 0.35);
   transition: all 0.3s ease;
+  min-height: 44px; /* Better touch target for mobile */
 }
 .btn-primary:hover {
   box-shadow: 0 6px 32px rgba(108, 71, 255, 0.55);
@@ -202,12 +203,20 @@ body::before {
   background: rgba(255,255,255,0.03);
   border: 1px solid rgba(255,255,255,0.08);
   transition: all 0.2s ease;
+  min-height: 44px; /* Better touch target for mobile */
 }
 .input-ghost:focus {
   background: rgba(108, 71, 255, 0.05);
   border-color: rgba(108, 71, 255, 0.5);
   box-shadow: 0 0 0 3px rgba(108, 71, 255, 0.1);
   outline: none;
+}
+
+/* ── Mobile safe area ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
 
 /* ── Toast ── */

@@ -10,10 +10,10 @@
   "dependencies": {
     "@solana/kit": "^6.8.0",
     "@solana/wallet-adapter-base": "^0.9.23",
-    "@solana/wallet-adapter-phantom": "*",
+    "@solana/wallet-adapter-phantom": "^0.9.24",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/wallet-adapter-react-ui": "^0.9.35",
-    "@solana/wallet-adapter-solflare": "*",
+    "@solana/wallet-adapter-solflare": "^0.9.24",
     "@solana/web3.js": "^1.95.3",
     "@umbra-privacy/sdk": "4.0.0",
     "@umbra-privacy/web-zk-prover": "2.0.1",

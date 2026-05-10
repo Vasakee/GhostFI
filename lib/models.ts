@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { DEMO_MODE } from "./constants";
 
 const WalletSchema = new mongoose.Schema({
   phoneNumber: { type: String, required: true, unique: true },

@@ -122,9 +122,9 @@ export default function TransactionsPage() {
   return (
     <>
       <Navbar />
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6 pb-24 md:pb-8">
+      <main className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-4 sm:space-y-6 pb-28 md:pb-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Transactions</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Transactions</h1>
           {loading && <RefreshCw size={16} className="animate-spin text-gray-500" />}
         </div>
 
@@ -135,7 +135,7 @@ export default function TransactionsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search transactions…"
-            className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:border-brand transition"
+            className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:border-brand transition"
           />
         </div>
 
@@ -145,7 +145,7 @@ export default function TransactionsPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
                 filter === f ? "bg-brand text-white" : "bg-gray-900 text-gray-400 hover:text-white border border-gray-800"
               }`}
             >

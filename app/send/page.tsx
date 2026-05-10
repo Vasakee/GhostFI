@@ -51,28 +51,28 @@ export default function SendPage() {
     <>
       <Navbar />
       {errorMsg && <ErrorModal error={errorMsg} onClose={() => setErrorMsg("")} />}
-      <main className="max-w-lg mx-auto px-4 py-8 space-y-5 pb-24 md:pb-8">
+      <main className="max-w-lg mx-auto px-4 py-6 sm:py-8 space-y-4 sm:space-y-5 pb-28 md:pb-8">
 
         {/* Header */}
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <Send size={20} className="text-purple-400" /> Private Send
           </h1>
-          <p className="text-gray-500 text-sm">Zero on-chain link between you and the recipient.</p>
+          <p className="text-gray-500 text-xs sm:text-sm">Zero on-chain link between you and the recipient.</p>
         </div>
 
         {/* Main card */}
-        <div className="glass rounded-2xl p-5 space-y-4">
+        <div className="glass rounded-2xl p-4 sm:p-5 space-y-4">
 
           {/* Token selector */}
           <div className="space-y-1.5">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Token</label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {SUPPORTED_TOKENS.map((t) => (
                 <button
                   key={t.mint}
                   onClick={() => setMint(t.mint)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                     mint === t.mint
                       ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20"
                       : "bg-white/5 text-gray-400 hover:text-white hover:bg-white/10"
@@ -94,7 +94,7 @@ export default function SendPage() {
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="Solana wallet address"
-              className="input-ghost w-full rounded-xl px-4 py-3 text-sm font-mono"
+              className="input-ghost w-full rounded-xl px-4 py-3 text-xs sm:text-sm font-mono"
             />
           </div>
 
@@ -113,7 +113,7 @@ export default function SendPage() {
                 <span className="text-xs text-gray-500">{token.symbol}</span>
                 <button
                   onClick={() => setAmount(privateBalance.toFixed(token.decimals))}
-                  className="text-[10px] text-purple-400 hover:text-purple-300 font-semibold bg-purple-500/10 px-2 py-0.5 rounded-full"
+                  className="text-[10px] text-purple-400 hover:text-purple-300 font-semibold bg-purple-500/10 px-2 py-1 rounded-full"
                 >
                   MAX
                 </button>

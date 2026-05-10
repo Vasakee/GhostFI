@@ -25,21 +25,21 @@ export default function UssdPage() {
   return (
     <>
       <Navbar />
-      <main className="max-w-2xl mx-auto px-4 py-10 space-y-8">
+      <main className="max-w-2xl mx-auto px-4 py-8 sm:py-10 space-y-8 pb-28 md:pb-10">
 
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 mb-2">
-            <Smartphone className="w-8 h-8 text-blue-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 mb-2">
+            <Smartphone className="w-8 h-8 text-purple-400" />
           </div>
           <h1 className="text-3xl font-bold text-white">GhostFi USSD</h1>
           <p className="text-gray-400">Private banking on any phone — no internet, no app required.</p>
         </div>
 
         {/* Dial CTA */}
-        <div className="rounded-2xl border border-blue-500/20 bg-blue-500/5 p-8 text-center space-y-4">
+        <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-8 text-center space-y-4">
           <p className="text-sm text-gray-400 uppercase tracking-widest font-medium">Dial from any phone</p>
-          <p className="text-5xl font-bold font-mono text-white tracking-wider">*384*GhostFi#</p>
+          <p className="text-3xl sm:text-5xl font-bold font-mono text-white tracking-wider">*384*GhostFi#</p>
           <p className="text-gray-400 text-sm">Africa's Talking sandbox shortcode</p>
           <div className="flex flex-wrap justify-center gap-2 pt-2">
             {NETWORKS.map((n) => (
@@ -50,7 +50,7 @@ export default function UssdPage() {
             href="https://simulator.africastalking.com/ussd/simulator"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-colors"
           >
             <Smartphone className="w-4 h-4" />
             Try the Web Simulator

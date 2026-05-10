@@ -27,14 +27,16 @@ You can spend your private balance at any merchant that accepts Visa.
 3.  **Load Funds**: Text `topup card 25`. This unshields 25 USDC from your private balance and loads it onto your Visa card instantly.
 4.  **View Details**: Text `reveal card` to get your card number, CVV, and Expiry via a secure, self-deleting message.
 
-## 5. Sending Money Privately (`send`)
-Send money to anyone with a phone number without leaving a trace on the public explorer.
-1.  Text `send 20 +1234567890`.
-2.  The money is sent via the **GhostFi Mixer**.
-3.  The recipient will receive a notification to claim their private funds.
+## 6. Withdrawing to Regional Bank Accounts
+You can move your crypto into local bank accounts instantly through our fintech partners.
+1. Text `withdraw 50 GTB 0123456789` (to withdraw $50 to a regional bank account).
+2. The bot will calculate the local currency equivalent and process the payout.
+3. You will receive a transaction reference and the funds will arrive in your bank account in seconds.
+
+## 7. Protocol Security
+To learn about our encryption, zero-knowledge proofs, and privacy model, text `security` at any time.
 
 ---
-
 # ⚖️ GhostFi Terms of Service (Simplified)
 
 ### 1. Privacy & Compliance

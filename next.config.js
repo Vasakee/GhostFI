@@ -78,6 +78,7 @@ const nextConfig = {
       path: false,
       stream: false,
       buffer: false,
+      child_process: false,
     };
 
     config.resolve.alias = {

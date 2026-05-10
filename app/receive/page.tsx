@@ -65,29 +65,29 @@ export default function ReceivePage() {
     <>
       <Navbar />
       {errorMsg && <ErrorModal error={errorMsg} onClose={() => setErrorMsg("")} />}
-      <main className="max-w-lg mx-auto px-4 py-8 space-y-5 pb-24 md:pb-8">
+      <main className="max-w-lg mx-auto px-4 py-6 sm:py-8 space-y-4 sm:space-y-5 pb-28 md:pb-8">
 
         {/* Header */}
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
             <Download size={20} className="text-purple-400" /> Receive
           </h1>
-          <p className="text-gray-500 text-sm">Scan for incoming private transfers and claim them.</p>
+          <p className="text-gray-500 text-xs sm:text-sm">Scan for incoming private transfers and claim them.</p>
         </div>
 
         {/* Address card */}
-        <div className="glass rounded-2xl p-5 space-y-3">
+        <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Your Receive Address</p>
-          <div className="bg-white/3 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
-            <p className="font-mono text-xs text-gray-300 break-all leading-relaxed">
+          <div className="bg-white/3 rounded-xl px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-3">
+            <p className="font-mono text-[11px] sm:text-xs text-gray-300 break-all leading-relaxed">
               {address || "Connect wallet"}
             </p>
             {address && (
               <button
                 onClick={copyAddress}
-                className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"
+                className="flex-shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-all"
               >
-                {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} className="text-gray-400" />}
+                {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} className="text-gray-400" />}
               </button>
             )}
           </div>

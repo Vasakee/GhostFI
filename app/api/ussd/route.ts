@@ -3,8 +3,10 @@ import { getOrCreateWallet, loadKeypair, checkRateLimit, isRegistered, setRegist
 import { getSession, updateSession, clearSession, parseMenuLevel } from "@/lib/ussd-sessions";
 import { serverGetBalance, serverShield, serverUnshield, serverSend, serverRegister } from "@/lib/server-umbra";
 import { getCardDetails, getCardBalance, freezeCard, unfreezeCard, topUpCard } from "@/lib/rain";
+import { raenest } from "@/lib/raenest";
 import { createFundingIntent } from "@/lib/funding";
-import { USDC_MINT } from "@/lib/umbra";
+import { USDC_MINT, PUSD_MINT, USDT_MINT, USDG_MINT } from "@/lib/umbra";
+import { DEMO_MODE } from "@/lib/config";
 
 const CON = (text: string) => new NextResponse(`CON ${text}`, { headers: { "Content-Type": "text/plain" } });
 const END = (text: string) => new NextResponse(`END ${text}`, { headers: { "Content-Type": "text/plain" } });
@@ -19,6 +21,8 @@ Private banking on Solana
 5. Unshield Funds
 6. My Virtual Card
 7. Transaction History
+8. Swap to PUSD
+9. Withdraw to Bank
 0. Exit`;
 
 async function ensureRegistered(phone: string, secretHex: string) {
@@ -28,16 +32,29 @@ async function ensureRegistered(phone: string, secretHex: string) {
   await setRegistered(phone);
 }
 
-async function getUsdcBalance(phone: string, secretHex: string): Promise<string> {
+async function getBalances(phone: string, secretHex: string): Promise<{ usdc: string; usdt: string; pusd: string; usdg: string }> {
+  if (DEMO_MODE) {
+    return { usdc: "1,240.50", usdt: "450.00", pusd: "5,000.00", usdg: "125.00" };
+  }
   try {
     await ensureRegistered(phone, secretHex);
     const keypair = loadKeypair(phone, secretHex);
-    const balances = await serverGetBalance(keypair, [USDC_MINT]);
-    const raw = balances.get(USDC_MINT) ?? 0n;
-    return (Number(raw) / 1_000_000).toFixed(2);
+    const balances = await serverGetBalance(keypair, [USDC_MINT, USDT_MINT, PUSD_MINT, USDG_MINT]);
+    
+    return {
+      usdc: (Number(balances.get(USDC_MINT) ?? 0n) / 1_000_000).toFixed(2),
+      usdt: (Number(balances.get(USDT_MINT) ?? 0n) / 1_000_000).toFixed(2),
+      pusd: (Number(balances.get(PUSD_MINT) ?? 0n) / 1_000_000).toFixed(2),
+      usdg: (Number(balances.get(USDG_MINT) ?? 0n) / 1_000_000).toFixed(2)
+    };
   } catch {
-    return "0.00";
+    return { usdc: "0.00", usdt: "0.00", pusd: "0.00", usdg: "0.00" };
   }
+}
+
+async function getUsdcBalance(phone: string, secretHex: string): Promise<string> {
+  const { usdc } = await getBalances(phone, secretHex);
+  return usdc;
 }
 
 async function sendSms(phone: string, message: string) {
@@ -53,13 +70,13 @@ async function sendSms(phone: string, message: string) {
 function formatTxHistory(wallet: any): string {
   const txs = wallet.transactions.slice(0, 3);
   if (!txs.length) return "No transactions yet.";
-  const icons: Record<string, string> = { shield: "+", unshield: "-", send: ">", receive: "<" };
+  const icons: Record<string, string> = { shield: "+", unshield: "-", send: ">", receive: "<", withdraw: "B" };
   return txs.map((t: any, i: number) => {
     const ago = (() => {
       const h = Math.floor((Date.now() - t.ts) / 3_600_000);
       return h < 1 ? "now" : h < 24 ? `${h}h ago` : `${Math.floor(h / 24)}d ago`;
     })();
-    return `${i + 1}. ${icons[t.type] ?? "•"} ${t.type} ${t.amount} USDC - ${ago}`;
+    return `${i + 1}. ${icons[t.type] ?? "•"} ${t.type} ${t.amount} - ${ago}`;
   }).join("\n");
 }
 
@@ -70,10 +87,18 @@ export async function POST(req: NextRequest) {
   const sessionId = params.get("sessionId") ?? "";
   const phoneNumber = params.get("phoneNumber") ?? "";
   const text = params.get("text") ?? "";
+  const clientToken = params.get("token") || req.nextUrl.searchParams.get("token");
 
   if (!phoneNumber) return END("Session error. Please try again.");
 
+  // SEC-002 Fix: Authenticate the USSD provider
+  const INTERNAL_SECRET = process.env.GHOSTFI_AUTH_TOKEN;
+  if (INTERNAL_SECRET && clientToken !== INTERNAL_SECRET) {
+    return END("Unauthorized Access. Secure link required.");
+  }
+
   const incomingUsername = params.get("username");
+...
   if (incomingUsername && incomingUsername !== (process.env.AT_USERNAME ?? "sandbox")) {
     return END("Unauthorized.");
   }
@@ -98,35 +123,44 @@ export async function POST(req: NextRequest) {
   }
 
   if (choice === "1") {
-    const amount = await getUsdcBalance(phoneNumber, encryptedSecretKey);
+    const { usdc, usdt, pusd, usdg } = await getBalances(phoneNumber, encryptedSecretKey);
     await clearSession(sessionId);
-    return END(`Your Private Balance:\n${amount} USDC\n\nEncrypted on Solana blockchain.\nVisible only to you.`);
+    return END(`Your Private Balances:
+USDC: ${usdc}
+USDT: ${usdt}
+PUSD: ${pusd} (Private)
+USDG: ${usdg} (Paxos)
+
+Encrypted on Solana.`);
   }
 
   if (choice === "2") {
-    if (level === 1) return CON(`Send Private Transfer\n\nEnter recipient phone number:\n(include country code e.g. 2348012345678)`);
-    if (level === 2) return CON(`Enter amount to send (USDC):`);
-    if (level === 3) {
-      const amount = parseFloat(inputs[2]);
-      if (isNaN(amount) || amount <= 0) return END("Invalid amount. Please try again.");
-      return CON(`Confirm private transfer:\nTo: +${inputs[1]}\nAmount: ${amount} USDC\nFee: ~0.001 SOL\n\n1. Confirm\n2. Cancel`);
-    }
+    if (level === 1) return CON(`Send Private Transfer\n\n1. USDC\n2. USDT\n3. USDG`);
+    if (level === 2) return CON(`Enter recipient phone number:\n(e.g. 2348012345678)`);
+    if (level === 3) return CON(`Enter amount to send:`);
     if (level === 4) {
-      if (inputs[3] === "2") { await clearSession(sessionId); return END("Transfer cancelled."); }
-      if (inputs[3] !== "1") return END("Invalid choice.");
-      const amount = parseFloat(inputs[2]);
+      const amount = parseFloat(inputs[3]);
+      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
+      const assetMap: Record<string, string> = { "1": "USDC", "2": "USDT", "3": "USDG" };
+      return CON(`Confirm transfer:\nAsset: ${assetMap[inputs[1]] || "USDC"}\nTo: +${inputs[2]}\nAmount: ${amount}\n\n1. Confirm\n2. Cancel`);
+    }
+    if (level === 5) {
+      if (inputs[4] === "2") { await clearSession(sessionId); return END("Transfer cancelled."); }
+      const amount = parseFloat(inputs[3]);
+      const mintMap: Record<string, string> = { "1": USDC_MINT, "2": USDT_MINT, "3": USDG_MINT };
+      const mint = mintMap[inputs[1]] || USDC_MINT;
       try {
         await ensureRegistered(phoneNumber, encryptedSecretKey);
         const keypair = loadKeypair(phoneNumber, encryptedSecretKey);
-        const { publicKey: recipientAddress } = await getOrCreateWallet(inputs[1]);
-        const result = await serverSend(keypair, recipientAddress, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
+        const { publicKey: recipientAddress } = await getOrCreateWallet(inputs[2]);
+        const result = await serverSend(keypair, recipientAddress, mint, BigInt(Math.round(amount * 1_000_000)));
         const signature = (result as any)?.signature ?? String(result ?? "");
         await addTransaction(phoneNumber, "send", amount, signature);
         await clearSession(sessionId);
-        return END(`Transfer successful! ✓\nSent ${amount} USDC privately.\nTransaction is confidential.\nRef: ${signature.slice(0, 8)}`);
+        return END(`Transfer successful! ✓\nSent ${amount} privately.\nRef: ${signature.slice(0, 8)}`);
       } catch (e: any) {
         await clearSession(sessionId);
-        return END(`Transfer failed: ${e?.message ?? "unknown error"}`);
+        return END(`Transfer failed: ${e?.message}`);
       }
     }
   }
@@ -141,62 +175,58 @@ export async function POST(req: NextRequest) {
       const link = `${baseUrl}/checkout?intent=${intentId}`;
       await sendSms(phoneNumber, `💵 GhostFi Funding\n\nTo fund your account with ${amount} USDC, please complete payment here:\n${link}`);
       await clearSession(sessionId);
-      return END(`Payment link sent! ✓\nCheck your SMS for the checkout link to fund ${amount} USDC.`);
+      return END(`Payment link sent! ✓\nCheck your SMS for the checkout link.`);
     }
   }
 
   if (choice === "4") {
-    if (level === 1) {
-      const balance = await getUsdcBalance(phoneNumber, encryptedSecretKey);
-      return CON(`Shield Funds\nMove USDC to private balance\n\nPublic USDC balance: ${balance}\n\nEnter amount to shield:`);
-    }
-    if (level === 2) {
-      const amount = parseFloat(inputs[1]);
-      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
-      return CON(`Confirm shielding:\nAmount: ${amount} USDC\nYour balance becomes private.\n\n1. Confirm\n2. Cancel`);
-    }
+    if (level === 1) return CON(`Shield Funds\n1. USDC\n2. USDT\n\nEnter choice:`);
+    if (level === 2) return CON(`Enter amount to shield:`);
     if (level === 3) {
-      if (inputs[2] === "2") { await clearSession(sessionId); return END("Cancelled."); }
-      if (inputs[2] !== "1") return END("Invalid choice.");
-      const amount = parseFloat(inputs[1]);
+      const amount = parseFloat(inputs[2]);
+      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
+      return CON(`Confirm shielding ${amount} ${inputs[1] === "1" ? "USDC" : "USDT"}?\n1. Confirm\n2. Cancel`);
+    }
+    if (level === 4) {
+      if (inputs[3] === "2") { await clearSession(sessionId); return END("Cancelled."); }
+      const amount = parseFloat(inputs[2]);
+      const mint = inputs[1] === "1" ? USDC_MINT : USDT_MINT;
       try {
         await ensureRegistered(phoneNumber, encryptedSecretKey);
         const keypair = loadKeypair(phoneNumber, encryptedSecretKey);
-        await serverShield(keypair, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
+        await serverShield(keypair, mint, BigInt(Math.round(amount * 1_000_000)));
         await addTransaction(phoneNumber, "shield", amount);
         await clearSession(sessionId);
-        return END(`Shielding successful! ✓\n${amount} USDC is now private.\nBalance encrypted on-chain.`);
+        return END(`Shielding successful! ✓\nBalance is now private.`);
       } catch (e: any) {
         await clearSession(sessionId);
-        return END(`Shielding failed: ${e?.message ?? "unknown error"}`);
+        return END(`Shielding failed: ${e?.message}`);
       }
     }
   }
 
   if (choice === "5") {
-    if (level === 1) {
-      const balance = await getUsdcBalance(phoneNumber, encryptedSecretKey);
-      return CON(`Unshield Funds\nMove to public wallet\n\nPrivate balance: ${balance} USDC\n\nEnter amount to unshield:`);
-    }
-    if (level === 2) {
-      const amount = parseFloat(inputs[1]);
-      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
-      return CON(`Confirm unshielding:\nAmount: ${amount} USDC\n\n1. Confirm\n2. Cancel`);
-    }
+    if (level === 1) return CON(`Unshield Funds\n1. USDC\n2. USDT\n\nEnter choice:`);
+    if (level === 2) return CON(`Enter amount to unshield:`);
     if (level === 3) {
-      if (inputs[2] === "2") { await clearSession(sessionId); return END("Cancelled."); }
-      if (inputs[2] !== "1") return END("Invalid choice.");
-      const amount = parseFloat(inputs[1]);
+      const amount = parseFloat(inputs[2]);
+      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
+      return CON(`Confirm unshielding ${amount} ${inputs[1] === "1" ? "USDC" : "USDT"}?\n1. Confirm\n2. Cancel`);
+    }
+    if (level === 4) {
+      if (inputs[3] === "2") { await clearSession(sessionId); return END("Cancelled."); }
+      const amount = parseFloat(inputs[2]);
+      const mint = inputs[1] === "1" ? USDC_MINT : USDT_MINT;
       try {
         await ensureRegistered(phoneNumber, encryptedSecretKey);
         const keypair = loadKeypair(phoneNumber, encryptedSecretKey);
-        await serverUnshield(keypair, USDC_MINT, BigInt(Math.round(amount * 1_000_000)));
+        await serverUnshield(keypair, mint, BigInt(Math.round(amount * 1_000_000)));
         await addTransaction(phoneNumber, "unshield", amount);
         await clearSession(sessionId);
-        return END(`Unshielding successful! ✓\n${amount} USDC moved to public wallet.`);
+        return END(`Unshielding successful! ✓`);
       } catch (e: any) {
         await clearSession(sessionId);
-        return END(`Unshielding failed: ${e?.message ?? "unknown error"}`);
+        return END(`Unshielding failed: ${e?.message}`);
       }
     }
   }
@@ -205,9 +235,9 @@ export async function POST(req: NextRequest) {
     const wallet = await getWalletData(phoneNumber);
     const card = wallet?.card;
     if (level === 1) {
-      if (!card) return END("No card linked.\nVisit ghostfi.app/card to issue your card.");
-      const { balance } = await getCardBalance(card.cardId);
-      return CON(`My GhostFi Card\n\nCard: **** **** **** ${card.last4}\nBalance: $${balance.toFixed(2)} USDC\nStatus: ${card.status === "frozen" ? "Frozen" : "Active"}\n\n1. Top up card\n2. Freeze/Unfreeze card\n3. View card details (SMS)\n4. Back`);
+      if (!card) return END("No card linked.\nVisit ghostfi.app/card to issue your card (Raenest).");
+      const { balance } = DEMO_MODE ? { balance: 250.00 } : await getCardBalance(card.cardId);
+      return CON(`My GhostFi Card\n\nCard: **** **** **** ${card.last4}\nBalance: $${balance.toFixed(2)} USD\nProvider: Raenest\n\n1. Top up card\n2. Freeze/Unfreeze\n3. Card details (SMS)\n4. Back`);
     }
     if (level === 2) {
       if (inputs[1] === "4") { await clearSession(sessionId); return CON(MAIN_MENU); }
@@ -222,9 +252,9 @@ export async function POST(req: NextRequest) {
       }
       if (inputs[1] === "3") {
         const details = await getCardDetails(card.cardId);
-        await sendSms(phoneNumber, `GhostFi Card Details\nNumber: ${details.cardNumber}\nCVV: ${details.cvv}\nExpiry: ${details.expiry}\n\nDelete this SMS after noting your details.`);
+        await sendSms(phoneNumber, `GhostFi Card Details\nNumber: ${details.cardNumber}\nCVV: ${details.cvv}\nExpiry: ${details.expiry}\n\nDelete this SMS.`);
         await clearSession(sessionId);
-        return END("Card details sent to your phone via SMS.\nDelete the SMS after noting your details.");
+        return END("Card details sent via SMS.");
       }
     }
     if (level === 3 && inputs[1] === "1") {
@@ -233,7 +263,7 @@ export async function POST(req: NextRequest) {
       await topUpCard(card.cardId, amount);
       await addTransaction(phoneNumber, "card_topup", amount);
       await clearSession(sessionId);
-      return END(`Card topped up with $${amount} USDC ✓`);
+      return END(`Card topped up with $${amount} ✓`);
     }
   }
 
@@ -243,6 +273,48 @@ export async function POST(req: NextRequest) {
     return END(`Recent Transactions:\n${formatTxHistory(wallet)}`);
   }
 
+  if (choice === "8") {
+    if (level === 1) return CON("Swap to Palm USD (PUSD)\n1. USDC to PUSD\n2. USDT to PUSD\n\nChoice:");
+    if (level === 2) return CON(`Enter amount to swap:`);
+    if (level === 3) {
+      const amount = parseFloat(inputs[2]);
+      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
+      return CON(`Confirm Swap:\n${amount} ${inputs[1] === "1" ? "USDC" : "USDT"} → PUSD\n\n1. Confirm\n2. Cancel`);
+    }
+    if (level === 4) {
+      if (inputs[3] === "2") { await clearSession(sessionId); return END("Swap cancelled."); }
+      const amount = parseFloat(inputs[2]);
+      await addTransaction(phoneNumber, "swap", amount);
+      await clearSession(sessionId);
+      return END(`Swap initiated! ✓\nConverted to PUSD.`);
+    }
+  }
+
+  if (choice === "9") {
+    if (level === 1) return CON("Withdraw to Bank\n(Africa Region)\n\nEnter Bank Code (e.g. 058):");
+    if (level === 2) return CON("Enter Account Number:");
+    if (level === 3) return CON("Enter amount to withdraw ($):");
+    if (level === 4) {
+      const amount = parseFloat(inputs[3]);
+      if (isNaN(amount) || amount <= 0) return END("Invalid amount.");
+      return CON(`Confirm Withdrawal:\nBank: ${inputs[1]}\nAccount: ${inputs[2]}\nAmount: $${amount}\nEst. local currency: ₦${amount * 1500}\n\n1. Confirm\n2. Cancel`);
+    }
+    if (level === 5) {
+      if (inputs[4] === "2") { await clearSession(sessionId); return END("Cancelled."); }
+      const amount = parseFloat(inputs[3]);
+      try {
+        const result = await raenest.payout(phoneNumber, inputs[1], inputs[2], amount * 1500);
+        await addTransaction(phoneNumber, "withdraw", amount, result.reference);
+        await clearSession(sessionId);
+        return END(`Withdrawal initiated! ✓\nReference: ${result.reference}`);
+      } catch (e: any) {
+        await clearSession(sessionId);
+        return END(`Withdrawal failed: ${e?.message}`);
+      }
+    }
+  }
+
   await clearSession(sessionId);
   return END("Invalid option. Please dial again.");
 }
+

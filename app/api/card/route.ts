@@ -1,22 +1,46 @@
 import { NextRequest, NextResponse } from "next/server";
-import { issueCard, getCardDetails, topUpCard, getCardBalance, getCardTransactions, freezeCard, unfreezeCard } from "@/lib/rain";
+import { 
+  issueCard, 
+  getCardDetails, 
+  topUpCard, 
+  getCardBalance, 
+  getCardTransactions, 
+  freezeCard, 
+  unfreezeCard 
+} from "@/lib/rain";
 
 export async function POST(req: NextRequest) {
-  const { action, ...args } = await req.json();
+  // SEC-003 Fix: Verify request authorization
+  const authHeader = req.headers.get("Authorization");
+  const INTERNAL_SECRET = process.env.GHOSTFI_AUTH_TOKEN;
+  
+  if (INTERNAL_SECRET && authHeader !== `Bearer ${INTERNAL_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    let result;
+    const { action, ...args } = await req.json();
+
     switch (action) {
-      case "issue":        result = await issueCard(args.userId, args.name, args.email); break;
-      case "details":      result = await getCardDetails(args.cardId); break;
-      case "topup":        result = await topUpCard(args.cardId, args.amount); break;
-      case "balance":      result = await getCardBalance(args.cardId); break;
-      case "transactions": result = await getCardTransactions(args.cardId); break;
-      case "freeze":       result = await freezeCard(args.cardId); break;
-      case "unfreeze":     result = await unfreezeCard(args.cardId); break;
-      default: return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+      case "issue":
+        return NextResponse.json(await issueCard(args.userId, args.name, args.email));
+      case "details":
+        return NextResponse.json(await getCardDetails(args.cardId));
+      case "topup":
+        return NextResponse.json(await topUpCard(args.cardId, args.amount));
+      case "balance":
+        return NextResponse.json(await getCardBalance(args.cardId));
+      case "transactions":
+        return NextResponse.json(await getCardTransactions(args.cardId));
+      case "freeze":
+        return NextResponse.json(await freezeCard(args.cardId));
+      case "unfreeze":
+        return NextResponse.json(await unfreezeCard(args.cardId));
+      default:
+        return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
-    return NextResponse.json(result);
   } catch (e: any) {
+    console.error(`[API Card] Error executing ${req.method}:`, e.message);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

@@ -282,33 +282,33 @@ export default function Dashboard() {
 
       {errorMsg && <ErrorModal error={errorMsg} onClose={() => setErrorMsg("")} />}
 
-      <main className="max-w-2xl mx-auto px-4 pt-4 md:pt-8 pb-24 md:pb-8 space-y-5">
+      <main className="max-w-2xl mx-auto px-4 pt-4 md:pt-8 pb-28 md:pb-8 space-y-4 sm:space-y-5">
 
         {/* Private Balance Card */}
-        <div className="relative overflow-hidden rounded-2xl p-6 bg-gradient-to-br from-purple-600/30 via-violet-600/20 to-transparent border border-purple-500/20">
+        <div className="relative overflow-hidden rounded-2xl p-5 sm:p-6 bg-gradient-to-br from-purple-600/30 via-violet-600/20 to-transparent border border-purple-500/20">
           <div className="absolute inset-0 card-shimmer pointer-events-none" />
-          <div className="relative space-y-4">
+          <div className="relative space-y-3 sm:space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-xs text-purple-300 font-medium">Private Balance</span>
+                <span className="text-xs sm:text-sm text-purple-300 font-medium">Private Balance</span>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setBalanceHidden((h) => !h)} className="text-purple-300/60 hover:text-purple-300 transition">
-                  {balanceHidden ? <EyeOff size={14} /> : <Eye size={14} />}
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button onClick={() => setBalanceHidden((h) => !h)} className="text-purple-300/60 hover:text-purple-300 transition p-1">
+                  {balanceHidden ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
-                <button onClick={refreshBalances} disabled={refreshing} className="text-purple-300/60 hover:text-purple-300 transition">
-                  <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+                <button onClick={refreshBalances} disabled={refreshing} className="text-purple-300/60 hover:text-purple-300 transition p-1">
+                  <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
                 </button>
               </div>
             </div>
 
             <div>
-              <p className="text-4xl font-black tracking-tight">
+              <p className="text-3xl sm:text-4xl font-black tracking-tight">
                 {balanceHidden ? "••••••" : `${privateBalance.toFixed(2)}`}
-                <span className="text-xl font-semibold text-purple-300 ml-2">{token.symbol}</span>
+                <span className="text-lg sm:text-xl font-semibold text-purple-300 ml-2">{token.symbol}</span>
               </p>
-              <p className="text-xs text-purple-400/60 mt-1">🔒 Encrypted on-chain — only you can see this</p>
+              <p className="text-xs sm:text-sm text-purple-400/60 mt-1">🔒 Encrypted on-chain — only you can see this</p>
             </div>
 
             {/* Token tabs */}
@@ -317,7 +317,7 @@ export default function Dashboard() {
                 <button
                   key={t.mint}
                   onClick={() => setSelectedMint(t.mint)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
                     selectedMint === t.mint
                       ? "bg-white/20 text-white"
                       : "bg-white/5 text-purple-300/60 hover:bg-white/10 hover:text-purple-300"
@@ -337,15 +337,15 @@ export default function Dashboard() {
 
         {/* Register banner */}
         {!registered && (
-          <div className="glass rounded-2xl p-5 border border-purple-500/20 flex items-center justify-between gap-4">
+          <div className="glass rounded-2xl p-4 sm:p-5 border border-purple-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div>
-              <p className="font-semibold text-sm">Set up your GhostFi account</p>
-              <p className="text-xs text-gray-500 mt-0.5">One-time on-chain registration to enable private balances.</p>
+              <p className="font-semibold text-sm sm:text-base">Set up your GhostFi account</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">One-time on-chain registration to enable private balances.</p>
             </div>
             <button
               onClick={handleRegister}
               disabled={!!loading || !publicKey}
-              className="flex-shrink-0 btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 flex items-center gap-2"
+              className="w-full sm:w-auto flex-shrink-0 btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {loading === "Registering..." ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -355,11 +355,11 @@ export default function Dashboard() {
         )}
 
         {/* Shield / Unshield */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="glass rounded-2xl p-5 space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-purple-500/15 flex items-center justify-center">
-                <ArrowDownLeft size={15} className="text-purple-400" />
+                <ArrowDownLeft size={16} className="text-purple-400" />
               </div>
               <div>
                 <p className="font-semibold text-sm">Shield</p>
@@ -376,7 +376,7 @@ export default function Dashboard() {
               />
               <button
                 onClick={() => setShieldAmt(String(publicTokenBalances[selectedMint] ?? 0))}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full font-semibold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full font-semibold"
               >
                 MAX
               </button>
@@ -385,7 +385,7 @@ export default function Dashboard() {
             <button
               onClick={handleShield}
               disabled={!!loading || !shieldAmt || !publicKey || !registered}
-              className="w-full btn-primary py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+              className="w-full btn-primary py-3 rounded-xl text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
             >
               {loading === "Shielding..." ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -393,10 +393,10 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="glass rounded-2xl p-5 space-y-3">
+          <div className="glass rounded-2xl p-4 sm:p-5 space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-xl bg-gray-500/15 flex items-center justify-center">
-                <ArrowUpRight size={15} className="text-gray-400" />
+                <ArrowUpRight size={16} className="text-gray-400" />
               </div>
               <div>
                 <p className="font-semibold text-sm">Unshield</p>
@@ -413,7 +413,7 @@ export default function Dashboard() {
               />
               <button
                 onClick={() => setUnshieldAmt(privateBalance.toFixed(token.decimals))}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full font-semibold"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full font-semibold"
               >
                 MAX
               </button>
@@ -422,7 +422,7 @@ export default function Dashboard() {
             <button
               onClick={handleUnshield}
               disabled={!!loading || !unshieldAmt || !publicKey || !registered}
-              className="w-full bg-white/5 hover:bg-white/8 border border-white/8 hover:border-white/15 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+              className="w-full bg-white/5 hover:bg-white/8 border border-white/8 hover:border-white/15 py-3 rounded-xl text-sm font-semibold disabled:opacity-40 transition-all flex items-center justify-center gap-2"
             >
               {loading === "Unshielding..." ? (
                 <div className="w-4 h-4 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin" />
