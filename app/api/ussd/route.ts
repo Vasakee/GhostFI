@@ -4,6 +4,7 @@ import { getSession, updateSession, clearSession, parseMenuLevel } from "@/lib/u
 import { serverGetBalance, serverShield, serverUnshield, serverSend, serverRegister } from "@/lib/server-umbra";
 import { getCardDetails, getCardBalance, freezeCard, unfreezeCard, topUpCard } from "@/lib/rain";
 import { raenest } from "@/lib/raenest";
+import { runPrivatePayroll } from "@/lib/cloak";
 import { createFundingIntent } from "@/lib/funding";
 import { USDC_MINT, PUSD_MINT, USDT_MINT, USDG_MINT } from "@/lib/umbra";
 import { DEMO_MODE } from "@/lib/config";
@@ -26,6 +27,7 @@ Private banking on Solana
 7. Transaction History
 8. Swap to PUSD
 9. Withdraw to Bank
+10. Private Payroll (Cloak)
 0. Exit`;
 
 async function ensureRegistered(phone: string, secretHex: string) {
@@ -333,6 +335,40 @@ Encrypted on Solana.`);
       } catch (e: any) {
         await clearSession(sessionId);
         return END(`Withdrawal failed: ${e?.message}`);
+      }
+    }
+  }
+
+  if (choice === "10") {
+    if (level === 1) return CON("Private Payroll (Cloak)\n\n1. Run Payroll (Demo)\n2. Get Auditor Key\n\nChoice:");
+    if (level === 2) {
+      if (inputs[1] === "1") return CON("Enter recipient phone (Demo):");
+      if (inputs[1] === "2") {
+        const key = await runPrivatePayroll(encryptedSecretKey, []); // Dummy call to initialize/get info
+        await clearSession(sessionId);
+        return END(`Auditor View Key Generated ✓\n\nUse this to disclose history to auditors privately.`);
+      }
+    }
+    if (level === 3 && inputs[1] === "1") return CON("Enter salary amount ($):");
+    if (level === 4 && inputs[1] === "1") {
+      const amount = parseFloat(inputs[3]);
+      const recipientPhone = inputs[2];
+      try {
+        const { publicKey: recipientPubkey } = await getOrCreateWallet(recipientPhone);
+        const results = await runPrivatePayroll(encryptedSecretKey, [
+          { recipient: recipientPubkey, amount: amount }
+        ]);
+        
+        if (results[0].status === "success") {
+          await addTransaction(phoneNumber, "send", amount, (results[0] as any).txHash);
+          await clearSession(sessionId);
+          return END(`Payroll successful! ✓\nSent $${amount} privately to ${recipientPhone} via Cloak.`);
+        } else {
+          throw new Error(results[0].error);
+        }
+      } catch (e: any) {
+        await clearSession(sessionId);
+        return END(`Payroll failed: ${e.message}`);
       }
     }
   }

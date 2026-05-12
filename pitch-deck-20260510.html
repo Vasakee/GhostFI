@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostFi Pitch Deck - Colosseum Hackathon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* GhostFi Brand Palette: Midnight, Ghost White, and Ethereal Purple */
+            --bg-primary: #050505;
+            --bg-secondary: #111111;
+            --accent-primary: #A855F7; /* Purple-500 */
+            --accent-secondary: #D8B4FE; /* Purple-300 */
+            --text-primary: #FFFFFF;
+            --text-secondary: #94A3B8;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --slide-width: 100vw;
+            --slide-height: 100vh;
+        }
+
+        * { margin: 0; padding: 0; box-space: border-box; }
+        body { 
+            background: var(--bg-primary); 
+            color: var(--text-primary); 
+            font-family: var(--font-main);
+            overflow: hidden;
+        }
+
+        .deck-container {
+            display: flex;
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            width: 800vw; /* 8 slides */
+        }
+
+        .slide {
+            width: var(--slide-width);
+            height: var(--slide-height);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        h1 { font-size: 5rem; font-weight: 800; letter-spacing: -0.05em; margin-bottom: 1rem; text-align: center; }
+        h2 { font-size: 3.5rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; color: var(--accent-primary); }
+        p { font-size: 1.8rem; color: var(--text-secondary); max-width: 800px; text-align: center; line-height: 1.4; }
+        
+        .highlight { color: var(--text-primary); font-weight: 600; }
+        .mono { font-family: var(--font-mono); color: var(--accent-secondary); }
+
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; width: 100%; max-width: 1200px; margin-top: 3rem; }
+        .card { 
+            background: var(--bg-secondary); 
+            padding: 2.5rem; 
+            border-radius: 1.5rem; 
+            border: 1px solid #333;
+            text-align: left;
+        }
+        .card h3 { font-size: 1.5rem; margin-bottom: 1rem; color: var(--accent-primary); }
+        .card p { font-size: 1.2rem; text-align: left; }
+
+        .footer {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            right: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #444;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            z-index: 10;
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--accent-primary);
+            transition: width 0.3s ease;
+        }
+
+        /* Presenter Notes */
+        #notes-panel {
+            position: fixed;
+            bottom: 4rem;
+            right: 2rem;
+            width: 400px;
+            background: rgba(0,0,0,0.95);
+            border: 1px solid var(--accent-primary);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            display: none;
+            z-index: 100;
+        }
+        #notes-panel h4 { color: var(--accent-primary); margin-bottom: 0.5rem; }
+        #notes-panel p { font-size: 1rem; text-align: left; color: #ccc; }
+
+        /* Navigation Overlay */
+        .nav-hint {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            font-size: 0.8rem;
+            color: #444;
+            pointer-events: none;
+        }
+
+        /* Specific Slide Styling */
+        .hero-ghost { opacity: 0.3; filter: blur(2px); position: absolute; z-index: -1; top: 20%; font-size: 20rem; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-hint">Arrows to navigate | 'N' for notes</div>
+    <div class="progress-bar" id="progress"></div>
+
+    <div class="deck-container" id="deck">
+        <!-- SLIDE 1: TITLE -->
+        <section class="slide">
+            <div class="hero-ghost">👻</div>
+            <h1>GhostFi</h1>
+            <p>Private Banking for the <span class="highlight">Next Billion</span></p>
+            <div style="margin-top: 2rem;" class="mono">Send money privately. No internet required.</div>
+            
+            <div class="presenter-notes">
+                Start with a hook: Imagine your bank account was posted publicly online. Everyone could see your balance, your salary, your rent. You'd never accept that. But that's exactly how crypto works today. Every move is a public sport. GhostFi fixes this.
+            </div>
+        </section>
+
+        <!-- SLIDE 2: THE PROBLEM -->
+        <section class="slide">
+            <h2>The Glass Bank</h2>
+            <p>In a normal bank, your money is private. In crypto, <span class="highlight">your on-chain activity is entertainment</span> for "degen bros" on Twitter.</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>Surveillance</h3>
+                    <p>Whale trackers and copy-traders front-run your every move.</p>
+                </div>
+                <div class="card">
+                    <h3>Dignity</h3>
+                    <p>Freelancers avoid crypto because clients can see what they spend their salary on.</p>
+                </div>
+                <div class="card">
+                    <h3>Access</h3>
+                    <p>Privacy tools require high-end phones and stable internet. Most of the world has neither.</p>
+                </div>
+            </div>
+            
+            <div class="presenter-notes">
+                Talk about the freelancer you interviewed. They avoid crypto efficiency just to keep their dignity. Talk about the 'frozen wallet' story—how public patterns lead to false assumptions and lost access to funds.
+            </div>
+        </section>
+
+        <!-- SLIDE 3: THE SOLUTION -->
+        <section class="slide">
+            <h2>GhostFi: A Private Gateway</h2>
+            <p>We combine <span class="highlight">ZK-Privacy</span> with the accessibility of <span class="highlight">USSD and WhatsApp</span>.</p>
+            <div class="grid">
+                <div class="card">
+                    <h3>Invisible Balances</h3>
+                    <p>Powered by Umbra Protocol's stealth addresses on Solana.</p>
+                </div>
+                <div class="card">
+                    <h3>Total Accessibility</h3>
+                    <p>Works on a $20 feature phone via USSD. No internet, no app needed.</p>
+                </div>
+                <div class="card">
+                    <h3>Real Utility</h3>
+                    <p>Virtual Visa cards and local bank off-ramps via Raenest.</p>
+                </div>
+            </div>
+
+            <div class="presenter-notes">
+                GhostFi is the bridge. We take the complex ZK-proofs of Umbra and wrap them in a simple text-based interface. You don't need a smartphone to have financial privacy.
+            </div>
+        </section>
+
+        <!-- SLIDE 4: THE DEMO (NARRATIVE) -->
+        <section class="slide">
+            <h2>"Shield 50"</h2>
+            <p>A user interaction in 3 seconds:</p>
+            <div style="background: #1a1a1a; padding: 2rem; border-radius: 1rem; border: 1px solid var(--accent-primary); margin-top: 2rem;">
+                <div class="mono" style="text-align: left; color: #fff;">
+                    > User: *920*44# <br>
+                    > GhostFi: Welcome back. Balance: 120.50 PUSD (Shielded) <br>
+                    > User: 1 (Send) <br>
+                    > GhostFi: Amount? <br>
+                    > User: 25 <br>
+                    > GhostFi: Destination (.sol or Phone)? <br>
+                    > User: ghost.sol
+                </div>
+            </div>
+            <p style="margin-top: 2rem; font-size: 1.2rem;">ZK-Proof generated on the server. Stealth address resolved via SNS. Transaction indexed for Dune.</p>
+
+            <div class="presenter-notes">
+                This is where you show the video. Point out that the user is interacting with a 'dumb' phone, but the backend is handling high-end Solana engineering: Umbra for privacy, Jupiter for swaps, and SNS for identity.
+            </div>
+        </section>
+
+        <!-- SLIDE 5: SIDE-TRACK INTEGRATIONS -->
+        <section class="slide">
+            <h2>Engineered for Impact</h2>
+            <div class="grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="card">
+                    <h3>🛡️ Umbra & Tether</h3>
+                    <p>Breaking the on-chain link for USDT/USDC transfers using Groth16 ZK-proofs.</p>
+                </div>
+                <div class="card">
+                    <h3>🇳🇬 Superteam x Raenest</h3>
+                    <p>Instant off-ramps to Nigerian bank accounts and virtual USD cards from a private balance.</p>
+                </div>
+                <div class="card">
+                    <h3>📊 Dune Analytics</h3>
+                    <p>Every GhostFi move includes an indexable memo. Privacy for users, transparency for the protocol.</p>
+                </div>
+                <div class="card">
+                    <h3>🌴 Palm & SNS</h3>
+                    <p>Defaulting to non-freezable PUSD for "Ghost Mode" and resolving identities via SNS.</p>
+                </div>
+            </div>
+
+            <div class="presenter-notes">
+                We aren't just building a wrapper. We've deep-linked into the Solana ecosystem. We use Dune Memos so judges can verify our volume. We use Raenest so people in Nigeria can actually eat using their private crypto.
+            </div>
+        </section>
+
+        <!-- SLIDE 6: TRACTION & WHY NOW -->
+        <section class="slide">
+            <h2>Why Now?</h2>
+            <p>Regulatory scrutiny is at an all-time high. <span class="highlight">Financial dignity is the new frontier.</span></p>
+            <div class="grid">
+                <div class="card">
+                    <h3>The Trend</h3>
+                    <p>Users are fleeing centralized exchanges for self-custody, but they're bringing their privacy concerns with them.</p>
+                </div>
+                <div class="card">
+                    <h3>The Tech</h3>
+                    <p>Umbra on Solana makes ZK-privacy fast and cheap enough for micro-transactions via USSD.</p>
+                </div>
+                <div class="card">
+                    <h3>The Market</h3>
+                    <p>350M+ people in Africa use USSD for banking. None of them have privacy.</p>
+                </div>
+            </div>
+
+            <div class="presenter-notes">
+                The tech is finally here. Solana's speed makes ZK-proofs viable for retail. The market is huge—USSD is the 'operating system' of finance in emerging markets.
+            </div>
+        </section>
+
+        <!-- SLIDE 7: THE TEAM & VISION -->
+        <section class="slide">
+            <h2>Our Vision</h2>
+            <p>"To make financial privacy a basic human right, not a luxury for the tech-literate."</p>
+            <div style="margin-top: 3rem;">
+                <div class="card" style="display: inline-block; text-align: center;">
+                    <h3>Milestone 1</h3>
+                    <p>Colosseum Hackathon Winner <br> (Nigeria & Global tracks)</p>
+                </div>
+            </div>
+
+            <div class="presenter-notes">
+                Wrap up with conviction. GhostFi is about basic dignity. Your salary and your spending are your business.
+            </div>
+        </section>
+
+        <!-- SLIDE 8: THE ASK -->
+        <section class="slide">
+            <h2>Join the Ghost Movement</h2>
+            <h1>ghostfi.me</h1>
+            <p>Built for the <span class="highlight">Colosseum Frontier</span></p>
+            <div style="margin-top: 4rem;" class="mono">github.com/Vasakee/GhostFI</div>
+
+            <div class="presenter-notes">
+                Thank the judges. Leave them with the URL and the GitHub.
+            </div>
+        </section>
+    </div>
+
+    <div id="notes-panel">
+        <h4>Presenter Notes</h4>
+        <p id="notes-content"></p>
+    </div>
+
+    <div class="footer">
+        <div>GHOSTFI // COLOSSEUM HACKATHON</div>
+        <div id="slide-number">1 / 8</div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const totalSlides = 8;
+        const deck = document.getElementById('deck');
+        const progress = document.getElementById('progress');
+        const slideNum = document.getElementById('slide-number');
+        const notesPanel = document.getElementById('notes-panel');
+        const notesContent = document.getElementById('notes-content');
+
+        function updateSlide() {
+            deck.style.transform = `translateX(-${currentSlide * 100}vw)`;
+            progress.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+            slideNum.innerText = `${currentSlide + 1} / ${totalSlides}`;
+            
+            const notes = document.querySelectorAll('.presenter-notes')[currentSlide].innerText;
+            notesContent.innerText = notes;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                if (currentSlide < totalSlides - 1) currentSlide++;
+                updateSlide();
+            }
+            if (e.key === 'ArrowLeft') {
+                if (currentSlide > 0) currentSlide--;
+                updateSlide();
+            }
+            if (e.key.toLowerCase() === 'n') {
+                notesPanel.style.display = notesPanel.style.display === 'block' ? 'none' : 'block';
+            }
+        });
+
+        updateSlide();
+    </script>
+</body>
+</html>

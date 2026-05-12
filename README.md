@@ -37,6 +37,11 @@ We have strategically integrated the following protocols to drive real-world uti
 *   **Identity:** Users can send funds to `.sol` domains (e.g., `send 10 ghost.sol`) directly within USSD and WhatsApp.
 *   **Code:** [lib/sns.ts](https://github.com/Vasakee/GhostFI/blob/main/lib/sns.ts)
 
+### 🛡️ [Cloak](https://cloak.ag/) ($5k)
+*   **Private Payroll:** Integrated Cloak SDK for shielded batch disbursements. Business owners can run payroll privately via USSD without exposing salaries on-chain.
+*   **Selective Disclosure:** Supports Cloak **Viewing Keys** for private history disclosure to auditors.
+*   **Code:** [lib/cloak.ts](https://github.com/Vasakee/GhostFI/blob/main/lib/cloak.ts)
+
 ### 🌴 [Palm USD / PUSD](https://palmsol.com/) ($10k)
 *   **Private Stability:** prioritizing PUSD as the default "Ghost Mode" currency, utilizing Jupiter swaps to ensure users hold non-freezable, private stablecoins.
 *   **Code:** [lib/pusd.ts](https://github.com/Vasakee/GhostFI/blob/main/lib/pusd.ts)

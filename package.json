@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@cloak-dev/sdk": "^1.3.3",
     "@solana/kit": "^6.8.0",
     "@solana/wallet-adapter-base": "^0.9.23",
     "@solana/wallet-adapter-phantom": "^0.9.29",
