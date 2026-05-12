@@ -120,11 +120,14 @@ const nextConfig = {
     if (!isServer) {
       config.resolve.plugins = [...(config.resolve.plugins || []), new SolanaKitBrowserPlugin()];
 
-      // Replace bare-runtime native binding files with a no-op proxy.
-      // These files call require.addon() which is undefined in webpack's browser runtime.
-      // The loader intercepts them before webpack tries to process require.addon.
+      // Replace all bare-* package files with a no-op proxy.
+      // bare-* packages are Node/Bare runtime packages (native bindings, process,
+      // events, os, etc.) that must never execute in a browser webpack bundle.
+      // Covering the entire package directory prevents both the require.addon() crash
+      // and "Class extends value #<Object> is not a constructor" errors when
+      // bare-process extends bare-events which resolves to an empty stub.
       config.module.rules.push({
-        test: /[\\/]node_modules[\\/](bare-[^/]+|sodium-native|quickbit-native|rabin-native|simdle-native|rocksdb-native|udx-native|fs-native-extensions)[\\/](binding|lib[\\/]binding[\\/]node)\.js$/,
+        test: /[\\/]node_modules[\\/](bare-[^/\\]+|sodium-native|quickbit-native|rabin-native|simdle-native|rocksdb-native|udx-native|fs-native-extensions)[\\/]/,
         use: [{ loader: path.resolve(__dirname, "lib/require-addon-loader.js") }],
       });
     }
