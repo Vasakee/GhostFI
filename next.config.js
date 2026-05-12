@@ -79,12 +79,28 @@ const nextConfig = {
       stream: false,
       buffer: false,
       child_process: false,
+      "bare-fs": false,
+      "bare-os": false,
+      "bare-path": false,
+      "bare-process": false,
+      "bare-signals": false,
+      "bare-stdio": false,
+      "bare-tty": false,
+      "require-addon": false,
     };
 
     config.resolve.alias = {
       ...config.resolve.alias,
       "@particle-network/chains": false,
       "@particle-network/auth": false,
+      // shim bare-related packages that might leak into client bundle
+      "bare-events": false,
+      "bare-buffer": false,
+      "bare-url": false,
+      "bare-abort-controller": false,
+      "sodium-native": false,
+      "@qvac/sdk": false,
+      "@tetherto/wdk": false,
       // snarkjs loaded via CDN — shim for both server and client builds
       "snarkjs": path.resolve(__dirname, "lib/snarkjs-shim.js"),
     };
