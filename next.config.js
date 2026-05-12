@@ -86,7 +86,7 @@ const nextConfig = {
       "bare-signals": false,
       "bare-stdio": false,
       "bare-tty": false,
-      "require-addon": false,
+      "require-addon": path.resolve(__dirname, "lib/require-addon-shim.js"),
     };
 
     config.resolve.alias = {
@@ -98,9 +98,21 @@ const nextConfig = {
       "bare-buffer": false,
       "bare-url": false,
       "bare-abort-controller": false,
+      "bare-module": false,
+      "bare-addon-resolve": false,
+      "bare-env": false,
+      "bare-hrtime": false,
+      "bare-os": false,
+      "bare-fs": false,
+      "bare-path": false,
+      "bare-signals": false,
+      "bare-stdio": false,
+      "bare-tty": false,
       "sodium-native": false,
+      "which-runtime": false,
       "@qvac/sdk": false,
       "@tetherto/wdk": false,
+      "require-addon": path.resolve(__dirname, "lib/require-addon-shim.js"),
       // snarkjs loaded via CDN — shim for both server and client builds
       "snarkjs": path.resolve(__dirname, "lib/snarkjs-shim.js"),
     };
