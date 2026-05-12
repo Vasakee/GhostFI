@@ -2,7 +2,7 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { ArrowDownLeft, ArrowUpRight, RefreshCw, Eye, EyeOff, TrendingUp, Wallet } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, RefreshCw, Eye, EyeOff, TrendingUp, Wallet, MessageSquare, Phone } from "lucide-react";
 import { getClient, SUPPORTED_TOKENS, PUSD_MINT } from "@/lib/umbra";
 import { registerAccount, shieldTokens, unshieldTokens, fetchEncryptedBalances } from "@/lib/actions";
 import { getPusdQuote, buildPusdSwapTx, executePusdSwap } from "@/lib/pusd";
@@ -501,6 +501,38 @@ export default function Dashboard() {
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : "Swap → PUSD 🌴"}
           </button>
+        </div>
+
+        {/* Offline Banking Card */}
+        <div className="glass rounded-2xl p-5 border border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-transparent">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center">
+              <MessageSquare size={20} className="text-purple-400" />
+            </div>
+            <div>
+              <p className="font-bold text-base">GhostFi on the Go</p>
+              <p className="text-xs text-gray-500">Bank privately without internet or a smartphone.</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+              <div className="flex items-center gap-2 mb-1">
+                <MessageSquare size={14} className="text-green-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">WhatsApp</span>
+              </div>
+              <p className="text-sm font-mono text-white">+1 415 523 8886</p>
+              <p className="text-[9px] text-gray-500 mt-1">Text "join ghost-mode" to start</p>
+            </div>
+            <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+              <div className="flex items-center gap-2 mb-1">
+                <Phone size={14} className="text-blue-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">USSD</span>
+              </div>
+              <p className="text-sm font-mono text-white">*920*44#</p>
+              <p className="text-[9px] text-gray-500 mt-1">Available in Nigeria & Kenya</p>
+            </div>
+          </div>
         </div>
 
         {/* Wallet balances + SOL */}

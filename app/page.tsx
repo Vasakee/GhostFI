@@ -17,6 +17,7 @@ const FEATURES = [
   { icon: "📈", title: "Live Market Intelligence", desc: "Real-time pricing data and liquidity insights directly integrated into your banking chat." },
   isVisible("ENABLE_DUNE_ANALYTICS") && { icon: "📊", title: "Protocol Transparency", desc: "Verifiable health and privacy metrics to ensure ecosystem integrity." },
   isVisible("ENABLE_USSD") && { icon: "📱", title: "Universal Inclusion", desc: "No internet needed. Bank via simple USSD codes on any mobile phone." },
+  isVisible("ENABLE_WHATSAPP") && { icon: "💬", title: "WhatsApp Banking", desc: "Chat with GhostFi on WhatsApp to send money, check balance, and manage your private vault." },
 ].filter(Boolean) as any[];
 
 const STATS = [

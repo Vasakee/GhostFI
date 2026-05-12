@@ -16,6 +16,7 @@ export const FEATURE_FLAGS = {
   ENABLE_BANK_PAYOUTS: false,   // Set to true after regulatory onboarding
   ENABLE_VIRTUAL_CARDS: false,  // Set to true after card partner approval
   ENABLE_DUNE_ANALYTICS: true,  // Safe to show
+  ENABLE_WHATSAPP: true,        // WhatsApp bot is complete
 };
 
 // Frontend-safe check (using env if available, else defaulting to flags)
