@@ -1,4 +1,4 @@
-import { CloakSDK, Connection, Keypair } from "@cloak-dev/sdk";
+import { CloakSDK, Connection, Keypair, getAccountSign } from "@cloak-dev/sdk";
 import { PublicKey } from "@solana/web3.js";
 
 let _sdk: CloakSDK | null = null;
@@ -59,12 +59,22 @@ export async function runPrivatePayroll(
     try {
       // For the hackathon demo, we'll implement individual shielded transfers
       // which Cloak relays privately.
-      const tx = await sdk.transfer({
-        amount: payment.amount,
-        recipient: new PublicKey(payment.recipient),
-        // mint: mint // Default is SOL, can be USDC/USDT mint
+      const result = await (mint 
+        ? sdk.withdrawSpl({
+            amount: payment.amount,
+            recipientAddress: new PublicKey(payment.recipient),
+            mintAddress: mint
+          })
+        : sdk.withdrawSol({
+            amount: payment.amount,
+            recipientAddress: new PublicKey(payment.recipient),
+          }));
+
+      results.push({ 
+        recipient: payment.recipient, 
+        status: result.success ? "success" : "failed", 
+        txHash: result.signature || (result as any).signatures?.[0] || "" 
       });
-      results.push({ recipient: payment.recipient, status: "success", txHash: tx });
     } catch (e: any) {
       console.error(`[Cloak] Payment failed for ${payment.recipient}:`, e);
       results.push({ recipient: payment.recipient, status: "failed", error: e.message });
@@ -81,6 +91,8 @@ export async function getAuditKey(address: string, secretKeyHex: string) {
   const sdk = await getCloakSdk(address, secretKeyHex);
   // Cloak viewing keys allow selective disclosure of history.
   // This is a key requirement for the track.
-  const keys = await sdk.initializeCloakKeys();
-  return keys.viewingKey;
+  // We use getAccountSign to derive a deterministic signature as a viewing key.
+  const ownerKeypair = Keypair.fromSecretKey(Buffer.from(secretKeyHex, "hex"));
+  const keys = await getAccountSign(ownerKeypair);
+  return Buffer.from(keys.signature).toString("hex");
 }

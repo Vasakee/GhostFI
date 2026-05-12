@@ -10,6 +10,7 @@ import { raenest } from "@/lib/raenest";
 import { DEMO_MODE, FEATURE_FLAGS } from "@/lib/config";
 import { resolveSns } from "@/lib/sns";
 import { trackEvent } from "@/lib/analytics";
+import { ghostInquiry } from "@/lib/qvac";
 
 const FROM = process.env.TWILIO_WHATSAPP_FROM!;
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -81,6 +82,7 @@ async function handleCommand(phone: string, msg: string, secretHex: string): Pro
       "📈 price [SOL/USDC] — check live market price",
       "📋 history — last 5 transactions",
       "🔑 address — your wallet address",
+      "🤖 ask [query] — private AI banking assistant (QVAC)",
       "🛡️ security — our protocol security",
       "ℹ️ help — show this menu"
     ].filter(Boolean).join("\n");
@@ -223,6 +225,13 @@ Your funds are encrypted on-chain.`;
     if (!card) return `💳 No card linked.`;
     const details = await getCardDetails(card.cardId);
     return `⚠️ Card details:\nNumber: ${details.cardNumber}\nCVV: ${details.cvv}\nExpiry: ${details.expiry}\n\nDelete this message.`;
+  }
+
+  const askMatch = cmd.match(/^ask\s+(.+)$/);
+  if (askMatch) {
+    const query = askMatch[1];
+    const aiResponse = await ghostInquiry(query);
+    return `🤖 *Ghost Assistant (Private AI)*\n\n${aiResponse}\n\n_Note: This response was generated locally via Tether QVAC SDK._`;
   }
 
   const swapMatch = cmd.match(/^swap\s+([\d.]+)$/);

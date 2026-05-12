@@ -29,9 +29,11 @@ We have strategically integrated the following protocols to drive real-world uti
 *   **On-Chain Indexing:** Every transaction includes a Dune-Indexable Memo (e.g., `GhostFi:fund:ussd`). This ensures the protocol’s health and volume can be verified on-chain.
 *   **Code:** [lib/analytics.ts](https://github.com/Vasakee/GhostFI/blob/main/lib/analytics.ts)
 
-### 🟢 [Tether / USDT](https://tether.to/) ($10k)
+### 🟢 [Tether Frontier Track (QVAC)](https://tether.to/) ($10k)
+*   **Private AI Assistant:** Integrated **Tether QVAC SDK** to provide a "Ghost Assistant" that runs local-first LLM inference.
+*   **Local Privacy:** User banking queries (e.g., "How do I shield my USDT?") are processed locally on the edge/backend, ensuring financial inquiries never touch cloud AI providers.
 *   **Full USDT Lifecycle:** GhostFi treats USDT as a first-class citizen. Users can fund with USDT, shield it, send it privately, and swap it—all via text commands.
-*   **Implementation:** [app/api/webhook/payment/route.ts](https://github.com/Vasakee/GhostFI/blob/main/app/api/webhook/payment/route.ts)
+*   **Code:** [lib/qvac.ts](https://github.com/Vasakee/GhostFI/blob/main/lib/qvac.ts) | [app/api/whatsapp/route.ts](https://github.com/Vasakee/GhostFI/blob/main/app/api/whatsapp/route.ts)
 
 ### 🆔 [SNS / Solana Name Service](https://sns.id/) ($5k)
 *   **Identity:** Users can send funds to `.sol` domains (e.g., `send 10 ghost.sol`) directly within USSD and WhatsApp.
