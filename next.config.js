@@ -69,7 +69,7 @@ const nextConfig = {
       },
     ];
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
     config.resolve.fallback = { 
       fs: false, 
       net: false, 
@@ -119,7 +119,26 @@ const nextConfig = {
 
     if (!isServer) {
       config.resolve.plugins = [...(config.resolve.plugins || []), new SolanaKitBrowserPlugin()];
+
+      // Replace bare-runtime native binding files with a no-op proxy.
+      // These files call require.addon() which is undefined in webpack's browser runtime.
+      // The loader intercepts them before webpack tries to process require.addon.
+      config.module.rules.push({
+        test: /[\\/]node_modules[\\/](bare-[^/]+|sodium-native|quickbit-native|rabin-native|simdle-native|rocksdb-native|udx-native|fs-native-extensions)[\\/](binding|lib[\\/]binding[\\/]node)\.js$/,
+        use: [{ loader: path.resolve(__dirname, "lib/require-addon-loader.js") }],
+      });
     }
+
+    // NormalModuleReplacementPlugin bypasses the exports-field resolution that
+    // prevents resolve.alias from intercepting require-addon inside node_modules.
+    // This ensures any require('require-addon') — regardless of which package
+    // requests it — gets our browser-safe shim instead of the native binding loader.
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(
+        /^require-addon$/,
+        path.resolve(__dirname, "lib/require-addon-shim.js")
+      )
+    );
 
     return config;
   },
