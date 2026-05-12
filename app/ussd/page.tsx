@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/Navbar";
+import Link from "next/link";
 import { Smartphone, Shield, Wifi, CheckCircle } from "lucide-react";
 
 const MENU_FLOW = [
@@ -36,26 +37,21 @@ export default function UssdPage() {
           <p className="text-gray-400">Private banking on any phone — no internet, no app required.</p>
         </div>
 
-        {/* Dial CTA */}
-        <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-8 text-center space-y-4">
-          <p className="text-sm text-gray-400 uppercase tracking-widest font-medium">Dial from any phone</p>
-          <p className="text-3xl sm:text-5xl font-bold font-mono text-white tracking-wider">*384*GhostFi#</p>
-          <p className="text-gray-400 text-sm">Africa's Talking sandbox shortcode</p>
-          <div className="flex flex-wrap justify-center gap-2 pt-2">
-            {NETWORKS.map((n) => (
-              <span key={n} className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-300 font-medium">{n}</span>
-            ))}
+        {/* Coming Soon CTA */}
+        <div className="rounded-2xl border border-white/10 bg-white/3 p-12 text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-purple-500/10 border border-purple-500/20 mb-2">
+            <Smartphone className="w-10 h-10 text-purple-400" />
           </div>
-          <a
-            href="https://simulator.africastalking.com/ussd/simulator"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-colors"
-          >
-            <Smartphone className="w-4 h-4" />
-            Try the Web Simulator
-          </a>
-          <p className="text-xs text-gray-500">No real phone needed — Africa's Talking provides a browser simulator for testing</p>
+          <h2 className="text-2xl font-bold text-white">USSD Banking Coming Soon</h2>
+          <p className="text-gray-400 max-w-sm mx-auto">We are currently finalizing regulatory approvals for USSD banking in Nigeria and Kenya. Check back soon!</p>
+          <div className="pt-4">
+            <Link 
+              href="/whatsapp" 
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-colors"
+            >
+              Use WhatsApp instead
+            </Link>
+          </div>
         </div>
 
         {/* Custodial notice */}

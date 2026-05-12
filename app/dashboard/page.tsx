@@ -515,22 +515,14 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <div className="bg-white/5 rounded-xl p-3 border border-white/5">
               <div className="flex items-center gap-2 mb-1">
                 <MessageSquare size={14} className="text-green-400" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">WhatsApp</span>
               </div>
-              <p className="text-sm font-mono text-white">+1 415 523 8886</p>
-              <p className="text-[9px] text-gray-500 mt-1">Text "join ghost-mode" to start</p>
-            </div>
-            <div className="bg-white/5 rounded-xl p-3 border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <Phone size={14} className="text-blue-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">USSD</span>
-              </div>
-              <p className="text-sm font-mono text-white">*920*44#</p>
-              <p className="text-[9px] text-gray-500 mt-1">Available in Nigeria & Kenya</p>
+              <p className="text-sm font-mono text-white">+234 703 494 2522</p>
+              <p className="text-[9px] text-gray-500 mt-1">Text "Hello" to start banking privately</p>
             </div>
           </div>
         </div>

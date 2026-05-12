@@ -56,10 +56,10 @@ export default function WhatsAppPage() {
           </div>
           <div className="space-y-1">
             <p className="text-white font-semibold text-lg">Scan to start chatting with GhostFi</p>
-            <p className="text-gray-400 text-sm">Or save <span className="text-purple-400 font-mono">+1 415 523 8886</span> and send <span className="font-mono text-white bg-white/10 px-1.5 py-0.5 rounded">join &lt;sandbox-word&gt;</span></p>
+            <p className="text-gray-400 text-sm">Or save <span className="text-purple-400 font-mono">+234 703 494 2522</span> and send <span className="font-mono text-white bg-white/10 px-1.5 py-0.5 rounded">Hello</span></p>
           </div>
           <a
-            href="https://wa.me/14155238886"
+            href="https://wa.me/2347034942522"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold transition-colors"
@@ -90,7 +90,7 @@ export default function WhatsAppPage() {
           <h2 className="text-lg font-semibold text-white">How it works</h2>
           <ol className="space-y-3">
             {[
-              "Save the Twilio sandbox number and send the join code",
+              "Save the GhostFi number and send 'Hello' to begin",
               "Your GhostFi wallet is created automatically on first message",
               "Send commands like 'balance' or 'shield 10' to manage funds",
               "All transactions use Umbra's ZK privacy infrastructure on Solana",
