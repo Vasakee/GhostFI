@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { WalletProviderWrapper } from "@/components/WalletProvider";
+import dynamic from "next/dynamic";
 import Script from "next/script";
 import { Polyfills } from "@/components/Polyfills";
+
+const WalletProviderWrapper = dynamic(
+  () => import("@/components/WalletProvider").then(m => m.WalletProviderWrapper),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: "GhostFi — Private Banking on Solana",
