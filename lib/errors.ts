@@ -15,6 +15,14 @@ export function formatError(e: unknown): string {
     return "Insufficient SOL balance. You need at least 0.01 SOL in your wallet to cover transaction fees. Please top up and try again.";
   }
 
+  // Network-level fetch failure during SDK transaction send (CORS, RPC unreachable, offline)
+  if (
+    err.code === "REGISTRATION_TRANSACTION_SEND" &&
+    (err.cause?.name === "TypeError" || err.cause?.message === "Failed to fetch")
+  ) {
+    return "Network error: Could not reach the Solana RPC or Umbra relayer. Please check your connection and try again.";
+  }
+
   const parts: string[] = [];
 
   if (err.message) parts.push(err.message);
