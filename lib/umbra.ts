@@ -46,7 +46,7 @@ export async function getClient(
   // Derive WebSocket URL only from absolute http(s) URLs
   const rpcWs = process.env.NEXT_PUBLIC_RPC_WS_URL ||
     (rpcUrl.startsWith("https://") ? rpcUrl.replace("https://", "wss://") :
-     rpcUrl.startsWith("http://") ? rpcUrl.replace("http://", "ws://") : undefined);
+     rpcUrl.startsWith("http://") ? rpcUrl.replace("http://", "ws://") : rpcUrl);
 
   _client = await getUmbraClient({
     signer: signer as any,
