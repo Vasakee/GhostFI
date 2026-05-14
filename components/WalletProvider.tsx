@@ -19,8 +19,8 @@ export function WalletProviderWrapper({ children }: { children: React.ReactNode 
     ? WalletAdapterNetwork.Devnet
     : WalletAdapterNetwork.Mainnet) as WalletAdapterNetwork;
   
-  let endpoint = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.mainnet-beta.solana.com";
-  if (endpoint.includes("your-mainnet-rpc-endpoint")) {
+  let endpoint = process.env.NEXT_PUBLIC_RPC_URL ?? "";
+  if (!endpoint || !endpoint.startsWith("http") || endpoint.includes("your-mainnet-rpc-endpoint")) {
     endpoint = "https://api.mainnet-beta.solana.com";
   }
 

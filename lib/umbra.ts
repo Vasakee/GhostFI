@@ -33,8 +33,8 @@ export async function getClient(
     ? createSignerFromWalletAccount(walletMatch.wallet, walletMatch.account)
     : buildFallbackSigner(address, signTransaction, signMessage);
 
-  let rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? "https://solana.publicnode.com";
-  if (!rpcUrl || rpcUrl.includes("your-mainnet-rpc-endpoint")) {
+  let rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? "";
+  if (!rpcUrl || !rpcUrl.startsWith("http") || rpcUrl.includes("your-mainnet-rpc-endpoint")) {
     rpcUrl = "https://solana.publicnode.com";
   }
   // If using a relative proxy path (/api/rpc), resolve to absolute for the SDK
