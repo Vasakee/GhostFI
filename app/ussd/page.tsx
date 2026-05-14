@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { Navbar } from "@/components/Navbar";
 import Link from "next/link";
 import { Smartphone, Shield, Wifi, CheckCircle } from "lucide-react";

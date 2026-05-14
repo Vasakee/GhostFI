@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/navigation";

@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";

@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { Navbar } from "@/components/Navbar";
 import { Shield } from "lucide-react";
 

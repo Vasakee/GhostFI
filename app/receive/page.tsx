@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useState, useEffect } from "react";
 import { Download, Copy, Check, Radar } from "lucide-react";

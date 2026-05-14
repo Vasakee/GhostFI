@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 import { useEffect, useRef, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Copy, Eye, EyeOff, Snowflake, Zap, ShoppingBag, Utensils, Tv, ArrowUpRight, AlertTriangle, CheckCircle } from "lucide-react";
