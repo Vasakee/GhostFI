@@ -23,6 +23,14 @@ export function formatError(e: unknown): string {
     return "Network error: Could not reach the Solana RPC or Umbra relayer. Please check your connection and try again.";
   }
 
+  // RPC returned HTTP 4xx/5xx (e.g. 403 from QuickNode domain restriction)
+  if (err.code === "REGISTRATION_TRANSACTION_SEND" && err.cause?.message?.includes("statusCode=403")) {
+    return "RPC access denied (403). The RPC endpoint is blocking requests from this domain. Please contact support.";
+  }
+  if (err.cause?.message?.includes("statusCode=403") || fullStr.includes("statusCode=403")) {
+    return "RPC access denied (403). The RPC endpoint is blocking requests from this domain.";
+  }
+
   const parts: string[] = [];
 
   if (err.message) parts.push(err.message);
