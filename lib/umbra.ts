@@ -43,10 +43,13 @@ export async function getClient(
     rpcUrl = `${base}${rpcUrl}`;
   }
 
-  // Derive WebSocket URL only from absolute http(s) URLs
+  // Derive WebSocket URL only from absolute http(s) URLs; never derive from proxy paths
   const rpcWs = process.env.NEXT_PUBLIC_RPC_WS_URL ||
-    (rpcUrl.startsWith("https://") ? rpcUrl.replace("https://", "wss://") :
-     rpcUrl.startsWith("http://") ? rpcUrl.replace("http://", "ws://") : rpcUrl);
+    (rpcUrl.startsWith("https://") && !rpcUrl.includes("/api/")
+      ? rpcUrl.replace("https://", "wss://")
+      : rpcUrl.startsWith("http://") && !rpcUrl.includes("/api/")
+      ? rpcUrl.replace("http://", "ws://")
+      : "wss://solana.publicnode.com");
 
   _client = await getUmbraClient({
     signer: signer as any,
