@@ -37,12 +37,22 @@ export async function getClient(
   if (!rpcUrl || rpcUrl.includes("your-mainnet-rpc-endpoint")) {
     rpcUrl = "https://solana.publicnode.com";
   }
+  // If using a relative proxy path (/api/rpc), resolve to absolute for the SDK
+  if (rpcUrl.startsWith("/")) {
+    const base = typeof window !== "undefined" ? window.location.origin : "https://www.ghostfi.live";
+    rpcUrl = `${base}${rpcUrl}`;
+  }
+
+  // Derive WebSocket URL only from absolute http(s) URLs
+  const rpcWs = process.env.NEXT_PUBLIC_RPC_WS_URL ||
+    (rpcUrl.startsWith("https://") ? rpcUrl.replace("https://", "wss://") :
+     rpcUrl.startsWith("http://") ? rpcUrl.replace("http://", "ws://") : undefined);
 
   _client = await getUmbraClient({
     signer: signer as any,
     network: (process.env.NEXT_PUBLIC_NETWORK as "mainnet" | "devnet") ?? "mainnet",
     rpcUrl,
-    rpcSubscriptionsUrl: process.env.NEXT_PUBLIC_RPC_WS_URL || rpcUrl.replace("https://", "wss://"),
+    rpcSubscriptionsUrl: rpcWs,
     indexerApiEndpoint: "https://utxo-indexer.api.umbraprivacy.com",
     deferMasterSeedSignature: true,
   });

@@ -7,11 +7,10 @@ import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { useBankStore } from "@/lib/store";
-import { resetClient } from "@/lib/umbra";
 
 function WalletDisconnectWatcher() {
   const { connected } = useWallet();
-  useEffect(() => { if (!connected) resetClient(); }, [connected]);
+  useEffect(() => { if (!connected) import("@/lib/umbra").then(m => m.resetClient()); }, [connected]);
   return null;
 }
 
