@@ -136,7 +136,7 @@ function buildFallbackSigner(
       const encoder = getTransactionEncoder();
       const decoder = getTransactionDecoder();
       const wireBytes = encoder.encode(transaction);
-      const vTx = VersionedTransaction.deserialize(wireBytes);
+      const vTx = VersionedTransaction.deserialize(wireBytes as Uint8Array);
       const signed = await signTransaction(vTx);
       
       // CRITICAL: We MUST return the full decoded transaction.
