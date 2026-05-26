@@ -46,11 +46,12 @@ export default function Dashboard() {
   }
 
   async function fetchPublicBalances(address: string) {
+    const isDevnet = process.env.NEXT_PUBLIC_NETWORK === "devnet";
     const rpcList = [
       process.env.NEXT_PUBLIC_RPC_URL,
-      "https://api.mainnet-beta.solana.com",
-      "https://solana.publicnode.com",
-      "https://solana-mainnet.g.allnodes.com",
+      isDevnet ? "https://api.devnet.solana.com" : "https://api.mainnet-beta.solana.com",
+      isDevnet ? null : "https://solana.publicnode.com",
+      isDevnet ? null : "https://solana-mainnet.g.allnodes.com",
     ].filter(Boolean) as string[];
 
     const pubkey = new PublicKey(address);

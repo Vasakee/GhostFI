@@ -13,3 +13,20 @@ AUDIT_REPORT.md
 UI_FIXES_SUMMARY.md
 ROADMAP.md
 
+# Agent layer — not ready for deploy yet
+app/agent/
+app/api/agent/
+app/api/agent-cron/
+app/api/agent-webhook/
+components/AgentStatusWidget.tsx
+lib/agent-ai.ts
+lib/agent-engine.ts
+lib/agent-logger.ts
+lib/agent-models.ts
+vercel.json
+
+# Ghost shield (Rust) — not deploying
+ghostfi-shield/
+lib/ghost-shield/
+app/api/shield/
+

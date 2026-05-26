@@ -1,17 +1,24 @@
 import { getUmbraClient, createSignerFromWalletAccount } from "@umbra-privacy/sdk";
+import { getPollingTransactionForwarder } from "@umbra-privacy/sdk";
+import { getTransactionEncoder, getTransactionDecoder } from "@solana/kit";
 import { getWallets } from "@wallet-standard/app";
 import { VersionedTransaction, VersionedMessage, PublicKey } from "@solana/web3.js";
 
 let _client: Awaited<ReturnType<typeof getUmbraClient>> | null = null;
 let _signerAddress: string | null = null;
 let _signTxRef: ((tx: VersionedTransaction) => Promise<VersionedTransaction>) | null = null;
+let _cachedNetwork: string | null = null;
 
-function findWalletAccount(address: string) {
-  const { get } = getWallets();
-  for (const wallet of get()) {
-    for (const account of wallet.accounts) {
-      if (account.address === address) return { wallet, account };
+async function findWalletAccount(address: string) {
+  // Phantom registers asynchronously — retry a few times before giving up
+  for (let i = 0; i < 5; i++) {
+    const { get } = getWallets();
+    for (const wallet of get()) {
+      for (const account of wallet.accounts) {
+        if (account.address === address) return { wallet, account };
+      }
     }
+    await new Promise((r) => setTimeout(r, 200));
   }
   return null;
 }
@@ -21,21 +28,61 @@ export async function getClient(
   signTransaction: (tx: VersionedTransaction) => Promise<VersionedTransaction>,
   signMessage: (msg: Uint8Array) => Promise<Uint8Array>
 ) {
-  if (_client && _signerAddress === address && _signTxRef === signTransaction) return _client;
+  const network = (process.env.NEXT_PUBLIC_NETWORK as "mainnet" | "devnet") ?? "mainnet";
+
+  if (_client && _signerAddress === address && _signTxRef === signTransaction && _cachedNetwork === network) return _client;
 
   // Prefer the Wallet Standard signer — the SDK's createSignerFromWalletAccount
   // handles the @solana/kit transaction format natively, avoiding cross-SDK
   // serialization issues that cause signature verification failures.
-  // Try the Wallet Standard signer first (SDK-native path).
-  // Fall back to the manual signer only if no Wallet Standard account is found.
-  const walletMatch = findWalletAccount(address);
-  const signer = walletMatch
-    ? createSignerFromWalletAccount(walletMatch.wallet, walletMatch.account)
-    : buildFallbackSigner(address, signTransaction, signMessage);
+  const walletMatch = await findWalletAccount(address);
+  console.log(`[umbra] signer: ${walletMatch ? "wallet-standard (" + walletMatch.wallet.name + ")" : "fallback"}`);
+
+  // Intercept createSignerFromWalletAccount to log what Phantom returns
+  let signer: any;
+  if (walletMatch) {
+    const { getTransactionEncoder, getTransactionDecoder } = await import("@solana/kit");
+    const encoder = getTransactionEncoder();
+    const decoder = getTransactionDecoder();
+    const signTxFeature = (walletMatch.wallet.features as any)["solana:signTransaction"];
+    signer = {
+      address: walletMatch.account.address,
+      async signTransaction(transaction: any) {
+        const wireBytes = encoder.encode(transaction);
+        console.log("[umbra] wireBytes prefix:", Array.from((wireBytes as Uint8Array).slice(0, 6)));
+        const [output] = await signTxFeature.signTransaction({ account: walletMatch.account, transaction: wireBytes });
+        console.log("[umbra] phantom output prefix:", Array.from((output.signedTransaction as Uint8Array).slice(0, 6)));
+        const decoded = decoder.decode(output.signedTransaction);
+        console.log("[umbra] decoded sigs:", JSON.stringify(Object.entries(decoded.signatures ?? {}).map(([k, v]) => [k.slice(0,8), Array.from((v as any).slice(0,4))])));
+        // Simulate to get detailed error logs
+        try {
+          const { createSolanaRpc } = await import("@solana/kit");
+          const rpc = createSolanaRpc(rpcUrl);
+          const { getBase64EncodedWireTransaction } = await import("@solana/kit");
+          const signed = { ...transaction, signatures: { ...transaction.signatures, ...decoded.signatures } };
+          const wire = getBase64EncodedWireTransaction(signed as any);
+          const sim = await (rpc as any).simulateTransaction(wire, { encoding: "base64", sigVerify: false }).send();
+          console.log("[umbra] simulation logs:", JSON.stringify(sim?.value?.logs));
+          console.log("[umbra] simulation err:", JSON.stringify(sim?.value?.err));
+        } catch(e: any) { console.log("[umbra] sim error:", e.message); }
+        return { ...transaction, signatures: { ...transaction.signatures, ...decoded.signatures } };
+      },
+      async signTransactions(transactions: any[]) {
+        return Promise.all(transactions.map((tx: any) => this.signTransaction(tx)));
+      },
+      async signMessage(message: Uint8Array) {
+        const signMessageFeature = (walletMatch.wallet.features as any)["solana:signMessage"];
+        const [output] = await signMessageFeature.signMessage({ account: walletMatch.account, message });
+        return { signer: walletMatch.account.address, message, signature: output.signature };
+      },
+    };
+  } else {
+    signer = buildFallbackSigner(address, signTransaction, signMessage);
+  }
 
   let rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? "";
   if (!rpcUrl || !rpcUrl.startsWith("http") || rpcUrl.includes("your-mainnet-rpc-endpoint")) {
-    rpcUrl = "https://solana.publicnode.com";
+    rpcUrl = network === "devnet" ? "https://api.devnet.solana.com" : "https://solana.publicnode.com";
   }
   // If using a relative proxy path (/api/rpc), resolve to absolute for the SDK
   if (rpcUrl.startsWith("/")) {
@@ -45,22 +92,32 @@ export async function getClient(
 
   // Derive WebSocket URL only from absolute http(s) URLs; never derive from proxy paths
   const rpcWs = process.env.NEXT_PUBLIC_RPC_WS_URL ||
-    (rpcUrl.startsWith("https://") && !rpcUrl.includes("/api/")
-      ? rpcUrl.replace("https://", "wss://")
-      : rpcUrl.startsWith("http://") && !rpcUrl.includes("/api/")
-      ? rpcUrl.replace("http://", "ws://")
-      : "wss://solana.publicnode.com");
+    (rpcUrl.includes("api.devnet.solana.com")
+      ? "wss://api.devnet.solana.com"
+      : (rpcUrl.startsWith("https://") && !rpcUrl.includes("/api/")
+        ? rpcUrl.replace("https://", "wss://")
+        : rpcUrl.startsWith("http://") && !rpcUrl.includes("/api/")
+        ? rpcUrl.replace("http://", "ws://")
+        : "wss://solana.publicnode.com"));
+
+  const indexerApiEndpoint = network === "devnet"
+    ? "https://utxo-indexer.api-devnet.umbraprivacy.com"
+    : "https://utxo-indexer.api.umbraprivacy.com";
+
+  // Use polling forwarder (no WebSocket dependency)
+  const transactionForwarder = getPollingTransactionForwarder({ rpcUrl });
 
   _client = await getUmbraClient({
     signer: signer as any,
-    network: (process.env.NEXT_PUBLIC_NETWORK as "mainnet" | "devnet") ?? "mainnet",
+    network,
     rpcUrl,
     rpcSubscriptionsUrl: rpcWs,
-    indexerApiEndpoint: "https://utxo-indexer.api.umbraprivacy.com",
+    indexerApiEndpoint,
     deferMasterSeedSignature: true,
-  });
+  }, { transactionForwarder } as any);
   _signerAddress = address;
   _signTxRef = signTransaction;
+  _cachedNetwork = network;
   return _client;
 }
 
@@ -73,33 +130,19 @@ function buildFallbackSigner(
   return {
     address: address as any,
     async signTransaction(transaction: any) {
-      const messageBytes: Uint8Array = transaction.messageBytes;
-      const vTx = new VersionedTransaction(VersionedMessage.deserialize(messageBytes));
+      // Encode the full v2 transaction as wire bytes (includes signature slots prefix),
+      // pass to Phantom via signTransaction (v1 VersionedTransaction accepts same wire format),
+      // then decode the signed output back into v2 format.
+      const encoder = getTransactionEncoder();
+      const decoder = getTransactionDecoder();
+      const wireBytes = encoder.encode(transaction);
+      const vTx = VersionedTransaction.deserialize(wireBytes);
       const signed = await signTransaction(vTx);
-
-      // Map signatures back by key
-      const newSignatures: Record<string, Uint8Array> = { ...(transaction.signatures ?? {}) };
       
-      // Look up the index of the signer's public key in the transaction's static account keys
-      const signerPublicKey = new PublicKey(address);
-      const index = signed.message.staticAccountKeys.findIndex(k => k.equals(signerPublicKey));
-      
-      if (index === -1) {
-        console.error("[buildFallbackSigner] Signer not found in transaction keys", address);
-        throw new Error("Signer not found in transaction keys");
-      }
-
-      const sig = signed.signatures[index];
-      if (!sig || sig.every((b: number) => b === 0)) {
-        throw new Error("Wallet returned empty signature");
-      }
-
-      newSignatures[address] = new Uint8Array(sig);
-      
-      return { 
-        ...transaction, 
-        signatures: newSignatures
-      };
+      // CRITICAL: We MUST return the full decoded transaction.
+      // If the wallet added a memo, priority fee, or other modifications,
+      // returning only the signatures for the original transaction will fail verification.
+      return decoder.decode(signed.serialize());
     },
     async signTransactions(transactions: any[]) {
       return Promise.all(transactions.map((tx: any) => this.signTransaction(tx)));
@@ -123,11 +166,11 @@ export function resetClient() {
 const isDevnet = process.env.NEXT_PUBLIC_NETWORK === "devnet";
 
 export const USDC_MINT = isDevnet
-  ? "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU"
+  ? "4oG4sjmopf5MzvTHLE8rpVJ2uyczxfsw2K84SUTpNDx7"  // Umbra faucet dUSDC
   : "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
 export const USDT_MINT = isDevnet
-  ? "EJwZgeZrdC8TXTQbQBoL6bfuAnFUUy1PVCMB4DYPzVaS"
+  ? "DXQwBNGgyQ2BzGWxEriJPVmXYFQBsQbXvfvfSNTaJkL6"  // Umbra faucet dUSDT
   : "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 
 // Palm USD — non-freezable, non-blacklistable USD stablecoin on Solana

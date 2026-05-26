@@ -1,13 +1,13 @@
 import { Keypair } from "@solana/web3.js";
 import { getUmbraClient } from "@umbra-privacy/sdk";
+import { getUserRegistrationFunction } from "@umbra-privacy/sdk/registration";
 import {
-  getUserRegistrationFunction,
-  getPublicBalanceToEncryptedBalanceDirectDepositorFunction,
-  getEncryptedBalanceToPublicBalanceDirectWithdrawerFunction,
-  getPublicBalanceToReceiverClaimableUtxoCreatorFunction,
-  getEncryptedBalanceQuerierFunction,
-  getMasterViewingKeyDeriver,
-} from "@umbra-privacy/sdk";
+  getATAIntoETADirectDepositorFunction,
+  getATAIntoReceiverBurnableStealthPoolNoteCreatorFunction,
+} from "@umbra-privacy/sdk/deposit";
+import { getETAIntoATAWithdrawerFunction } from "@umbra-privacy/sdk/withdrawal";
+import { getEncryptedBalanceQuerierFunction } from "@umbra-privacy/sdk/query";
+import { getMasterViewingKeyDeriver } from "@umbra-privacy/sdk/crypto";
 import {
   getUserRegistrationProver,
   getCreateReceiverClaimableUtxoFromPublicBalanceProver,
@@ -106,20 +106,20 @@ export async function serverRegister(keypair: Keypair) {
 
 export async function serverShield(keypair: Keypair, mint: string, amount: bigint) {
   const client = await getServerUmbraClient(keypair);
-  const deposit = getPublicBalanceToEncryptedBalanceDirectDepositorFunction({ client });
+  const deposit = getATAIntoETADirectDepositorFunction({ client });
   return (deposit as any)(client.signer.address, mint, amount);
 }
 
 export async function serverUnshield(keypair: Keypair, mint: string, amount: bigint) {
   const client = await getServerUmbraClient(keypair);
-  const withdraw = getEncryptedBalanceToPublicBalanceDirectWithdrawerFunction({ client });
+  const withdraw = getETAIntoATAWithdrawerFunction({ client });
   return (withdraw as any)(client.signer.address, mint, amount);
 }
 
 export async function serverSend(keypair: Keypair, recipient: string, mint: string, amount: bigint) {
   const client = await getServerUmbraClient(keypair);
   const zkProver = getCreateReceiverClaimableUtxoFromPublicBalanceProver(proxiedDeps);
-  const createUtxo = getPublicBalanceToReceiverClaimableUtxoCreatorFunction({ client }, { zkProver });
+  const createUtxo = getATAIntoReceiverBurnableStealthPoolNoteCreatorFunction({ client }, { zkProver });
   return (createUtxo as any)({ destinationAddress: recipient, mint, amount });
 }
 

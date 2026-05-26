@@ -24,7 +24,10 @@ export function WalletProviderWrapper({ children }: { children: React.ReactNode 
     endpoint = "https://api.mainnet-beta.solana.com";
   }
 
-  const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter({ network })], [network]);
+  const wallets = useMemo(() => [
+    new PhantomWalletAdapter({ appIdentity: { name: "GhostFi", url: process.env.NEXT_PUBLIC_APP_URL ?? "https://ghostfi.live", icon: "/favicon.svg" } }),
+    new SolflareWalletAdapter({ network }),
+  ], [network]);
 
   const hydrate = useBankStore((s) => s.hydrate);
   useEffect(() => { hydrate(); }, [hydrate]);

@@ -1,15 +1,17 @@
+import { getUserRegistrationFunction } from "@umbra-privacy/sdk/registration";
+import { getUserEncryptionKeyRotatorFunction, getMasterViewingKeyRotatorFunction } from "@umbra-privacy/sdk/account";
 import {
-  getUserRegistrationFunction,
-  getPublicBalanceToEncryptedBalanceDirectDepositorFunction,
-  getEncryptedBalanceToPublicBalanceDirectWithdrawerFunction,
-  getPublicBalanceToReceiverClaimableUtxoCreatorFunction,
-  getClaimableUtxoScannerFunction,
-  getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction,
-  getEncryptedBalanceQuerierFunction,
-  getMasterViewingKeyDeriver,
-  getUmbraRelayer,
-  getUserAccountQuerierFunction,
-} from "@umbra-privacy/sdk";
+  getATAIntoETADirectDepositorFunction,
+  getATAIntoReceiverBurnableStealthPoolNoteCreatorFunction,
+} from "@umbra-privacy/sdk/deposit";
+import { getETAIntoATAWithdrawerFunction } from "@umbra-privacy/sdk/withdrawal";
+import {
+  getBurnableStealthPoolNoteScannerFunction,
+  getReceiverBurnableStealthPoolNoteIntoETABurnerFunction,
+} from "@umbra-privacy/sdk/burn";
+import { getEncryptedBalanceQuerierFunction, getUserAccountQuerierFunction } from "@umbra-privacy/sdk/query";
+import { getMasterViewingKeyDeriver } from "@umbra-privacy/sdk/crypto";
+import { getUmbraRelayer } from "@umbra-privacy/sdk";
 import {
   getUserRegistrationProver,
   getCreateReceiverClaimableUtxoFromPublicBalanceProver,
@@ -44,7 +46,25 @@ const call = (fn: any, ...args: any[]) => fn(...args);
 export async function registerAccount(client: any) {
   const zkProver = getUserRegistrationProver(proxiedDeps);
   const register = getUserRegistrationFunction({ client }, { zkProver });
-  const result = await register({ confidential: true, anonymous: true });
+  let result: any;
+  try {
+    result = await register({ confidential: true, anonymous: true });
+  } catch (e: any) {
+    if (e?.code === "KEY_CONSISTENCY_X25519_TOKEN_ENCRYPTION_KEY") {
+      console.log("[registerAccount] token key mismatch, rotating...");
+      const rotateKey = getUserEncryptionKeyRotatorFunction({ client });
+      await rotateKey();
+      result = await register({ confidential: true, anonymous: true });
+    } else if (e?.code === "KEY_CONSISTENCY_X25519_MVK_ENCRYPTION_KEY") {
+      // MVK rotation requires v5-compatible ZK prover which isn't available yet.
+      // Fall back to confidential-only registration (no anonymous/mixer usage).
+      console.log("[registerAccount] MVK key mismatch, registering confidential-only...");
+      const registerConfidential = getUserRegistrationFunction({ client }, { zkProver });
+      result = await registerConfidential({ confidential: true, anonymous: false });
+    } else {
+      throw e;
+    }
+  }
   console.log("[registerAccount] confirmed:", result);
   const query = getUserAccountQuerierFunction({ client });
   const accountState = await call(query, client.signer.address).catch((e: any) => ({ error: e?.message }));
@@ -54,23 +74,23 @@ export async function registerAccount(client: any) {
 
 export async function shieldTokens(client: any, mint: string, amount: bigint) {
   console.log("[shieldTokens] mint:", mint, "amount:", amount);
-  const deposit = getPublicBalanceToEncryptedBalanceDirectDepositorFunction({ client });
+  const deposit = getATAIntoETADirectDepositorFunction({ client });
   return call(deposit, client.signer.address, mint, amount);
 }
 
 export async function unshieldTokens(client: any, mint: string, amount: bigint) {
-  const withdraw = getEncryptedBalanceToPublicBalanceDirectWithdrawerFunction({ client });
+  const withdraw = getETAIntoATAWithdrawerFunction({ client });
   return call(withdraw, client.signer.address, mint, amount);
 }
 
 export async function privateSend(client: any, recipient: string, mint: string, amount: bigint) {
   const zkProver = getCreateReceiverClaimableUtxoFromPublicBalanceProver(proxiedDeps);
-  const createUtxo = getPublicBalanceToReceiverClaimableUtxoCreatorFunction({ client }, { zkProver });
+  const createUtxo = getATAIntoReceiverBurnableStealthPoolNoteCreatorFunction({ client }, { zkProver });
   return call(createUtxo, { destinationAddress: recipient, mint, amount });
 }
 
 export async function scanUtxos(client: any) {
-  const scan = getClaimableUtxoScannerFunction({ client });
+  const scan = getBurnableStealthPoolNoteScannerFunction({ client });
   const { received } = await call(scan, 0n, 0n);
   return received;
 }
@@ -80,7 +100,7 @@ export async function claimUtxos(client: any, utxos: any[]) {
   const relayer = getUmbraRelayer(RELAYER);
   const deps: any = { zkProver, relayer };
   if (client.fetchBatchMerkleProof) deps.fetchBatchMerkleProof = client.fetchBatchMerkleProof;
-  const claim = getReceiverClaimableUtxoToEncryptedBalanceClaimerFunction({ client }, deps);
+  const claim = getReceiverBurnableStealthPoolNoteIntoETABurnerFunction({ client }, deps);
   return call(claim, utxos);
 }
 
