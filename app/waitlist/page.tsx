@@ -36,7 +36,7 @@ const DIAL_CODES = [
 
 const SOURCES = ["Twitter/X", "Superteam", "Friend/Referral", "Telegram/Discord", "Other"];
 
-const WAITLIST_URL = process.env.NEXT_PUBLIC_WAITLIST_URL ?? "https://ghostfi.live/waitlist";
+const WAITLIST_URL = String(process.env.NEXT_PUBLIC_WAITLIST_URL ?? "https://ghostfi.live/waitlist");
 
 function ShareButtons({ position, referralCode }: { position: number; referralCode: string }) {
   const refLink = `${WAITLIST_URL}?ref=${referralCode}`;
@@ -121,19 +121,20 @@ function WaitlistContent() {
           ref,
         }),
       });
-      const data = await res.json();
-      if (data.success) {
+      const text = await res.text();
+      let data: any = {};
+      try { data = JSON.parse(text); } catch { setErrors({ email: text }); return; }
+
+      const pos = Number(data.position) || 0;
+      const code = String(data.referralCode ?? "");
+      if (data.success || pos > 0) {
         setCount(c => c + 1);
-        setSuccess({ position: data.position, email: form.email.trim(), referralCode: data.referralCode });
+        setSuccess({ position: pos, email: form.email.trim(), referralCode: code });
       } else {
-        if (data.position) {
-          setSuccess({ position: data.position, email: form.email.trim(), referralCode: data.referralCode ?? "" });
-        } else {
-          setErrors({ email: String(data.error ?? "Something went wrong") });
-        }
+        setErrors({ email: String(data.error ?? "Something went wrong") });
       }
     } catch (err: any) {
-      setErrors({ email: String(err?.message ?? "Network error — please try again") });
+      setErrors({ email: String(err?.message ?? "Network error") });
     } finally {
       setLoading(false);
     }
