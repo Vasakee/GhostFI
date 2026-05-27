@@ -36,7 +36,7 @@ const DIAL_CODES = [
 
 const SOURCES = ["Twitter/X", "Superteam", "Friend/Referral", "Telegram/Discord", "Other"];
 
-const WAITLIST_URL = String(process.env.NEXT_PUBLIC_WAITLIST_URL ?? "https://ghostfi.live/waitlist");
+const WAITLIST_URL = "https://ghostfi.live/waitlist";
 
 function ShareButtons({ position, referralCode }: { position: number; referralCode: string }) {
   const refLink = `${WAITLIST_URL}?ref=${referralCode}`;
