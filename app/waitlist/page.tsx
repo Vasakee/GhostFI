@@ -74,7 +74,11 @@ function ShareButtons({ position, referralCode }: { position: number; referralCo
 
 export default function WaitlistPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+      </main>
+    }>
       <WaitlistContent />
     </Suspense>
   );
