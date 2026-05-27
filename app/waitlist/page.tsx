@@ -203,7 +203,7 @@ function WaitlistContent() {
               {success.referralCode && <ShareButtons position={success.position} referralCode={success.referralCode} />}
             </div>
           ) : (
-            <form onSubmit={submit} className="glass rounded-2xl border border-white/8 p-6 sm:p-8 space-y-4">
+            <form onSubmit={submit} className="glass rounded-2xl border border-white/8 p-4 sm:p-8 space-y-3 sm:space-y-4">
               {/* Name */}
               <div>
                 <input
@@ -225,11 +225,11 @@ function WaitlistContent() {
               </div>
 
               {/* Phone */}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <select
                   value={form.dialCode}
                   onChange={e => setForm(f => ({ ...f, dialCode: e.target.value }))}
-                  className="bg-[#13131f] border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors"
+                  className="w-full sm:w-auto bg-[#13131f] border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-colors"
                 >
                   {DIAL_CODES.map((d, i) => (
                     <option key={i} value={d.code}>{d.code} {d.country}</option>
@@ -238,7 +238,7 @@ function WaitlistContent() {
                 <input
                   type="tel" placeholder="Phone number (optional)" value={form.phone}
                   onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
                 />
               </div>
 
