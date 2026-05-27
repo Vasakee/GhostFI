@@ -129,11 +129,11 @@ function WaitlistContent() {
         if (data.position) {
           setSuccess({ position: data.position, email: form.email.trim(), referralCode: data.referralCode ?? "" });
         } else {
-          setErrors({ email: data.error ?? "Something went wrong" });
+          setErrors({ email: String(data.error ?? "Something went wrong") });
         }
       }
-    } catch {
-      setErrors({ email: "Network error — please try again" });
+    } catch (err: any) {
+      setErrors({ email: String(err?.message ?? "Network error — please try again") });
     } finally {
       setLoading(false);
     }
