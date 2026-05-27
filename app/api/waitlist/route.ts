@@ -33,6 +33,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  try {
   const body = await req.json().catch(() => null);
   if (!body) return NextResponse.json({ success: false, error: "Invalid request" }, { status: 400 });
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
   const position = (await Waitlist.countDocuments()) + 1;
   const referralCode = generateReferralCode();
 
-  const entry = await Waitlist.create({
+  await Waitlist.create({
     name: name.trim(),
     email: email.toLowerCase().trim(),
     phone: phone ?? "",
@@ -74,12 +75,10 @@ export async function POST(req: NextRequest) {
     referredBy: ref ?? "",
   });
 
-  // Bump referrer up 5 spots
   if (ref) {
     await Waitlist.updateOne({ referralCode: ref }, { $inc: { referralCount: 1, position: -5 } });
   }
 
-  // Fire-and-forget confirmation email
   sendConfirmationEmail(name.trim(), email.toLowerCase().trim(), position);
 
   return NextResponse.json({
@@ -88,4 +87,8 @@ export async function POST(req: NextRequest) {
     referralCode,
     message: `You're #${position} on the waitlist!`,
   });
+  } catch (e: any) {
+    console.error("[waitlist]", e);
+    return NextResponse.json({ success: false, error: e?.message ?? "Server error" }, { status: 500 });
+  }
 }
