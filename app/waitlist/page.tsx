@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { GhostLogo } from "@/components/GhostLogo";
@@ -73,6 +73,14 @@ function ShareButtons({ position, referralCode }: { position: number; referralCo
 }
 
 export default function WaitlistPage() {
+  return (
+    <Suspense>
+      <WaitlistContent />
+    </Suspense>
+  );
+}
+
+function WaitlistContent() {
   const params = useSearchParams();
   const ref = params.get("ref") ?? "";
 
