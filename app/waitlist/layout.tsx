@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import "../globals.css";
 
 export const metadata: Metadata = {
   title: "GhostFi Waitlist — Private Banking on Solana",
-  description:
-    "Join the waitlist for GhostFi — the privacy-first neobank on Solana. Shielded balances, virtual cards, WhatsApp and USSD banking.",
+  description: "Join the waitlist for GhostFi — the privacy-first neobank on Solana. Shielded balances, virtual cards, WhatsApp and USSD banking.",
   openGraph: {
     title: "GhostFi — Private Banking is Coming.",
     description: "Your balance. Invisible. Join the waitlist.",
@@ -22,5 +22,13 @@ export const metadata: Metadata = {
 };
 
 export default function WaitlistLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <html lang="en">
+      <body>
+        <div className="glow-orb glow-orb-1" />
+        <div className="glow-orb glow-orb-2" />
+        <div className="relative z-10">{children}</div>
+      </body>
+    </html>
+  );
 }
