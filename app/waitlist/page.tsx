@@ -40,7 +40,7 @@ const WAITLIST_URL = "https://ghostfi.live/waitlist";
 
 function ShareButtons({ position, referralCode }: { position: number; referralCode: string }) {
   const refLink = `${WAITLIST_URL}?ref=${referralCode}`;
-  const tweetText = encodeURIComponent(`I just joined the @GhostFi_xyz waitlist — private banking on Solana is coming 👻\nJoin here: ${refLink}`);
+  const tweetText = encodeURIComponent(`I just joined the @ghostfinancee waitlist — private banking on Solana is coming 👻\nJoin here: ${refLink}`);
   const waText = encodeURIComponent(`Have you heard about GhostFi? Private banking on Solana — your balance stays invisible.\nJoin the waitlist: ${refLink}`);
   const [copied, setCopied] = useState(false);
 
