@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "GhostFi — Private Banking is Coming.",
     description: "Your balance. Invisible. Join the waitlist.",
-    site: "@GhostFi_xyz",
+    site: "@GhostFinancee",
     images: ["https://ghostfi.live/og-waitlist.png"],
   },
 };

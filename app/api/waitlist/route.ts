@@ -21,7 +21,7 @@ async function sendConfirmationEmail(name: string, email: string, position: numb
       from: "GhostFi <noreply@ghostfi.live>",
       to: email,
       subject: "You're on the GhostFi waitlist 👻",
-      text: `Hey ${name},\n\nYou're #${position} on the GhostFi waitlist.\n\nWe're putting the final touches on private banking for Solana. When we're ready, you'll be the first to know.\n\nWhile you wait — follow us on Twitter for updates:\n@GhostFi_xyz\n\nYour money. Your business.\n— The GhostFi Team\n\nghostfi.live`,
+      text: `Hey ${name},\n\nYou're #${position} on the GhostFi waitlist.\n\nWe're putting the final touches on private banking for Solana. When we're ready, you'll be the first to know.\n\nWhile you wait — follow us on Twitter for updates:\n@GhostFinancee\n\nYour money. Your business.\n— The GhostFi Team\n\nghostfi.live`,
     }),
   }).catch(() => {});
 }
@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
     message: `You're #${position} on the waitlist!`,
   });
   } catch (e: any) {
+    console.error("[waitlist] MONGODB_URI starts with:", process.env.MONGODB_URI?.slice(0, 20));
     console.error("[waitlist]", e);
     return NextResponse.json({ success: false, error: e?.message ?? "Server error" }, { status: 500 });
   }
